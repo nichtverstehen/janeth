@@ -3,7 +3,7 @@
 // Compatible with Opera and Firefox. Maybe IE in future.
 // Tested with Opera 9.5, Opera 10, Firefox3 (GM 0.8).
 //
-// alpha 2 (2009-02-28)
+// alpha 3 (2009-03-03)
 //
 // More info at http://nichtverstehen.de/vkontakte-scrobbler
 //
@@ -33,10 +33,10 @@
 (function() { /*  begin private namespace */
 
 var log_ = function(s) {
-	/*if (window.opera)
+	if (window.opera)
 		window.opera.postError(s);
 	else if (console && console.log)
-		console.log(s);*/
+		console.log(s);
 }
 
 var scrobbler = {
@@ -212,7 +212,7 @@ var scrobbler = {
 			if (!p) return;
 			infoDiv = p.parentNode.appendChild(document.createElement('div'));
 			infoDiv.id = 'lastfm_trackInfo';
-			infoDiv.setAttribute('style', 'background: #eee; padding: .5em; margin-top: 1em;');
+			infoDiv.setAttribute('style', 'background: #eee; padding: 10px; margin-top: 1em; position: fixed; width: 156px;');
 			
 		}
 		if (infoDiv) infoDiv.style.display = 'block';
@@ -228,7 +228,8 @@ var scrobbler = {
 					iurl = info.album.image[i]['#text'];
 				}
 			}
-			albumart = '<div style="text-align: center"><img src="'+iurl+'"/></div>\n';
+			alert(1);
+			albumart = '<div style="text-align: center"><img style="max-width: 156px; max-height: 156px;" src="'+iurl+'"/></div>\n';
 		}
 		var tags = [];
 		if (info.toptags.tag  != undefined) {
@@ -275,7 +276,7 @@ var scrobbler = {
 		
 		this.playTime = 0;
 		this.startTime = 0;
-		this.scrobbleTime = Math.min(240, Math.floor(this.track.len/2));
+		this.scrobbleTime = Math.min(20, Math.floor(this.track.len/2)); // 240
 		
 		var t_ = this;
 		this.fm.nowPlaying(this.track, function() { t_.nowPlayingSuccess(rid); }, function() { t_.nowPlayingFail(rid); });
@@ -721,7 +722,7 @@ var ff_conn = {
 			} else gotError();
 		};
 		
-		var poststring = 's='+this.session+'&a[0]='+encodeURIComponent(track.artist)+'&t[0]='+track.title+'&i[0]='+track.startTime+
+		var poststring = 's='+this.session+'&a[0]='+track.artist+'&t[0]='+track.title+'&i[0]='+track.startTime+
 			'&o[0]=P&r[0]=&b[0]='+track.album+'&l[0]='+track.secs+'&n[0]='+track.trackn+'&m[0]='+track.mbid;
 		GM_xmlhttpRequest({ method: 'POST', url: this.scrUrl,
 			headers: {'Content-type': 'application/x-www-form-urlencoded', 'Content-Length': poststring.length},
