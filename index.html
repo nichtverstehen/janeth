@@ -1,0 +1,317 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<!-- Wow! valid XHTML -->
+<head>
+<title>Janeth vkontakte-scrobbler. Last.fm + Vkontakte = ♥</title>
+<style type="text/css">
+body { margin: 0 auto; width: 40em; font: normal 12pt Times, serif; line-height: 1.3em; }
+.root { border-top: .5em solid #000; }
+#copyright { border-top: 2px solid #333; background: #eee; padding: .5em 1em; font-size: .8em; margin-top: 3em; line-height: 1.2em; }
+#header { overflow: hidden; zoom: 1; background: url(i/bg.png) no-repeat top right; padding-bottom: 100px; margin-bottom: -100px; }
+#content { margin: 2.5em .5em 0; }
+
+p { margin: 1em 0; }
+h1 { margin: .8em .5em; font-size: 2em; color: #333; }
+h1 .ver { font-size: .4em; color: #aaa; margin-left: -.5em; }
+h1, h2, h3 { font-family: 'Trebuchet MS', sans-serif; font-weight: normal; }
+
+#menu { background: #000; color: #eee; margin-left: 1px; float: left; }
+#menu ul { background: #000; list-style: none; margin: 1px -2px 1px 0; padding: .5em 0em .5em 1em; position: relative; left: -1px; }
+#menu li { display: inline; margin: 0 1em 0 0; }
+#menu a { color: #fff; }
+
+h3 { display: inline-block; zoom: 1; _display: inline; margin: 1em 0 0; padding: 0em .6em; border-bottom: 2px solid #333; color: #333; }
+h4 { float: left; margin: 0; border: 1px dotted #666; color: #333; margin: -.2em .7em 0em 0; padding: .0em .3em; }
+h5 { font-size: 1em; margin: 1em 0; }
+
+ol, ul { clear: left; } /* list after h4 */
+
+.installlink { /*width: 10em; background: #faa; border: 1px solid #f88; margin: .5em 0em; padding: .2em 1em;*/
+	/*  color: #333; font: 1.4em normal 'Trebuchet MS', sans-serif; */
+	text-align: center; margin: -.5em auto 0;  }
+.installlink img { border: 0; }
+.nospam { display: none; }
+li .highlight { margin: 0.1em 0 0.2em; font-size: 0.8em; line-height: 1.1em; color: #999; }
+h4 img { margin-right: 5px; vertical-align: middle; }
+
+.screenshots { margin: 1em 0; }
+.screenshots div { border: 0px solid #999; padding: .5em; width: 100px; margin-right: 1em;
+	zoom: 1; display: inline-block; _display: inline; vertical-align: top; }
+.screenshots div a img { border: 1px dotted #666; }
+.screenshots div p { margin: 0; font-size: .8em; text-align: center; color: #333; }
+
+li .icon { vertical-align: middle; margin-right: .5em; }
+</style>
+
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+try {
+var pageTracker = _gat._getTracker("UA-836471-5");
+pageTracker._trackPageview();
+} catch(err) {}</script>
+
+</head>
+<body>
+<div id="about" class="root">
+
+<div id="header">
+
+<h1>Janeth <span class="ver">бета 4</span></h1>
+
+<div id="menu">
+<ul>
+<li><a href="#usage">Скриншоты</a></li>
+<li><a href="#usage">Применение</a></li>
+<li><a href="#install">Установка</a></li>
+<li><a href="vkontakte-scrobbler.user.js" onclick="javascript: pageTracker._trackPageview('/vkontakte-scrobbler/vkontakte-scrobbler.user.js'); ">Скачать</a></li>
+<li><a href="#code">Код</a></li>
+</ul>
+</div> <!-- #menu -->
+</div> <!-- #header -->
+
+<div id="content">
+
+<p>Только что пришли с <a href="http://nichtverstehen.de/verstehen">зеленого сайта</a>? — расслабьтесь: здесь не будет зеленого.
+Кстати, у нас новинка: теперь Жанет работает в Google Chrome.</p>
+
+<h3><a name="about">Что это?</a></h3>
+<p>Очень много людей слушают музыку <a href="http://vkontakte.ru">вконтакте</a>.
+ Не меньше людей любят скробблить свои прослушивания на <a href="http://last.fm">Last.fm</a>.
+Janeth vkontakte-scrobbler создан для того, чтобы совместить эти два пристрастия. Если вы не пользуетесь ни тем,
+ни другим, информация на этой странице может быть для вас неинтересна.</p>
+<p>Собственно говоря, эта штука есть user-скрипт (расширение) для браузеров Opera, Firefox и Google Chrome, которое
+автоматически отправляет информацию о прослушанных композициях на сервер Last.fm. Разумеется,
+«listening-now» оповещения тоже отправляются.</p>
+<p>Пока что скробблер находится в альфа-версии, так что возможны всякие разные глюки.
+Просьба сообщить о них <a href="http://vkontakte.ru/notes.php?act=s&amp;nid=8367692&amp;oid=1584415">в комментариях</a> к заметке вконтакте.
+И проверяйте появление обновлений здесь на сайте почаще (текущая версия в заголовке страницы).</p>
+
+<h3><a name="screenshots">Скриншоты</a></h3>
+
+<div class="screenshots">
+<div><a href="i/in_opera.png"><img src="i/in_opera_s.png" alt="scrobbler in opera"/></a>
+	<p>В Опере</p></div>
+<div><a href="i/in_ff.png"><img src="i/in_ff_s.png" alt="scrobbler in firefox"/></a>
+	<p>В Firefox</p></div>
+<div><a href="i/in_group.png"><img src="i/in_group_s.png" alt="playing on a group page"/></a>
+	<p>На странице группы</p></div>
+</div>
+
+<h3>Разве не прелесть?</h3> 
+<ul>
+<li>работает в Firefox, Opera, а теперь еще и в <em>Google Chrome</em>
+<p class="highlight">Совместимость с Оперой было делом приоритетным. Знаете ли, из 1200 строк кода код для Оперы занимает 500.</p></li>
+<li>не требует ввода пароля
+<p class="highlight">А значит, это можно не думать о безопасности.</p></li>
+<li>надежен в условиях нестабильного соединения
+<p class="highlight">Скробблер сам переподключится, когда ему нужно будет что-нибудь отправить.</p></li>
+<li>правильно отслеживает длительность проигрывания
+<p class="highlight">Если нажмете паузу — счетчик остановится. Вы скажете, это естесственно, но другой аналогичный скрипт не учитывает пауз!</p></li>
+<li>загружает дополнительную информацию о треке и показывает вместе с обложкой альбома прямо вконтакте
+<p class="highlight">Почему бы и не насладиться красивыми картинками, пока музыка играет?..</p>
+</li>
+</ul>
+
+<h4>О безопасности</h4>
+<p>Хорошей новостью будет то, что скрипт вообще не запрашивает вашего пароля ни от вконтакте,
+ни от Last.fm (и, стало быть, нигде не хранит и никуда не отправляет). Не то, что я просто вам это обещаю,
+любой может <em>сам проверить</em> это, так как исходники полностью открыты.</p>
+
+<h3><a name="usage">Применение</a></h3>
+
+<p>Собственно говоря, делать ничего не надо. <a href="#install">Установите скрипт</a>, слушайте музыку, получайте рекомендации
+на Last.fm, смотрите статистику. Оно будет работать само.</p>
+<p>Однако пытливому читателю, 
+я все же расскажу чуть-чуть подробнее. Лишь только вы установите скрипт
+и загрузите любую страницу с аудиозаписями
+вконтакте в правом верхнем углу (или ниже меню, если это страница профиля или группы) появится значок
+Last.fm. Он бывает:</p>
+<ul>
+<li><img src="i/inactive_i.png" alt="gray box" class="icon" />серым, если еще не подключился к серверу
+	<p class="highlight">Если кликнуть, он начнет подключаться.</p></li>
+<li><img src="i/working_i.png" alt="loading box" class="icon"/>серым анимированным, когда идет процесс соединения с сервером</li>
+<li><img src="i/error_i.png" alt="red box" class="icon"/>красным с крестиком, если при подключении произошла ошибка
+	<p class="highlight">Если кликнуть, он попробует подключиться снова.</p></li>
+<li><img src="i/anon_i.png" alt="yellow box" class="icon" />желтым с вопросиком, если вы не залогинились на last.fm.
+	<p class="highlight">Если кликнуть, вы окажетесь на страничке входа на last.fm.</p></li>
+<li><img src="i/ready_i.png" alt="blue box" class="icon"/>синим, когда все прошло хорошо и скробблер готов, простите, скробблить
+	<p class="highlight">Если кликнуть, вы попадете в свой профиль на Last.fm.</p></li>
+</ul>
+
+<p>Когда вы слушаете песню рядом отображается забавная иконка <img src="i/playing_i.png" alt="playing icon"/>
+(анимированная, пока песня играет, и остановленная во время паузы).
+А во всплывающей подсказке к ней пишут, сколько времени осталось играть песни до того, как она заскробблится.
+После отправки на сервер информации о том, что вы прослушали песню,
+появится галочка или крестик, показывающие, успешно ли все прошло.</p>
+<p>Если кликнуть во время проигрывания на вышеупомянутую забавную иконку, можно отредактировать автора и название композиции,
+которые будут отправлены на last.fm, а также форсировать или отменить отправку.</p>
+
+<h3><a name="install">Установка</a></h3>
+<p>Проверено, Жанет работает в Opera 9.6/10, Firefox 3 (Greasemonkey 0.8) и еще в Google Chrome 2.0.
+Впрочем, если у вас другая версия браузера все равно попробуйте — скорее всего, все будет нормально.</p>
+<p>В будущем возможно портирование скробблера под IE и Safari. Если вы JS-разработчик, 
+можете <a href="#code">этим заняться</a>. А если нет, просто заходите почаще ;).</p>
+
+<p>Итак, внимание, главная кнопка:</p>
+<div class="installlink"><a href="vkontakte-scrobbler.user.js" onclick="javascript: pageTracker._trackPageview('/vkontakte-scrobbler/vkontakte-scrobbler.user.js'); "><img src="i/install.png" alt="Установить"/></a></div>
+
+<h4><img src="i/ff_icon.png" alt="ff icon"/>Firefox</h4>
+<ol>
+<li>Установите расширение <a href="https://addons.mozilla.org/ru/firefox/addon/748">Greasemonkey</a>.</li>
+<li>Перейдите по ссылке «Установить» выше и согласитесь на установку скрипта.</li>
+<li>???</li>
+<li>profit ;)</li>
+</ol>
+<p>После этого на страницах с аудиозаписями вконтакте появится кнопочка Last.fm, и
+при проигрывании будет отображаться статус скробблера.</p>
+
+<h4><img src="i/opera_icon.png" alt="opera icon"/>Opera</h4>
+<p>Здесь чуть посложнее.</p>
+<ol>
+<li>Сначала создайте папку, в которую будете складывать user-скрипты, в любом удобном месте.</li>
+<li>Кликните кнопку «Установить» выше и сохраните скрипт в выбранную папку.</li>
+<li>Затем откройте окно настроек Оперы (Tools — Preferences или Инструменты — Настройки) и на вкладке Advanced (Дополнительно) в разделе Content (Содержимое) кликните кнопку «Javascript options» («Настроить JavaScript»).
+В появившемся окне в поле User Javascript files (Папка пользовательских файлов Javascript) выберите ту папку, которую  создали на первом шаге.</li>
+</ol>
+
+<h4><img src="i/chrome_icon.png" alt="chrome icon"/>Google Chrome</h4>
+<ol>
+<li>Нам потребуется свежий Chrome. Текущая публичная финальная версия 2.0 подойдет.</li>
+<li>Для начала, отредактируйте ярлык Хрома для запуска с поддержкой User Scripts: в свойствах ярлыка во вкладке Ярлык в поле объект
+после полного пути к chrome.exe укажите через пробел <code>«--enable-user-scripts»</code>.</li>
+<li>Перейдите в папку <code>%LOCALAPPDATA%\Google\Chrome\User Data\Default</code> (напрмер, через Пуск — Выполнить) и создайте там папку <code>User Scripts</code>.</li>
+<li>Кликните кнопку «Установить» выше и сохраните скрипт в только что созданную папку.</li>
+<li>После перезапуска Chrome при помощи того самого отредактированного ярлыка Жанет займется своим делом.</li>
+</ol>
+
+<h3><a name="issues">Что ожидается и текущие проблемы</a></h3>
+<ol>
+<li>откуда еще поскробблим?? Пишите!</li>
+<li>foo_scrobblecharts?</li>
+<li>совместимость с Safari.</li>
+</ol>
+<p>Остальные известные мне проблемы уже решены. Так что присылайте отчеты о багах
+и запросы на дополнительные возможности <a href="http://vkontakte.ru/notes.php?act=s&amp;nid=8367692&amp;oid=1584415">в комментарии</a>.</p>
+
+<h3><a name="changelog">История версий</a></h3>
+<h5>Бета 4 (2009-06-27)</h5>
+<ul>
+<li>багфикс насчет русских названий треков</li>
+<li>отображение информации о версии по клику на серый значок скробблера</li>
+</ul>
+
+<h5>Бета 3 (2009-05-26)</h5>
+<ul>
+<li>багфикс для ФФ</li>
+</ul>
+
+<h5>Бета 2 (2009-05-24)</h5>
+<ul>
+<li>Совместимость с новым интерфейсом поиска вконтакте</li>
+<li>Поддержка Google Chrome</li>
+<li>И еще, спасибо <a href="http://vkontakte.ru/id327373">Павлу Мельникову</a> за поддержку скрипта пока мне было не до того</li>
+</ul>
+
+<h5>Бета 1 (2009-04-07)</h5>
+<ul>
+<li>Получен client identifier. Можно и бетой назваться ;)</li>
+<li>При обновлении в FF не забудьте удалить старую версию (а не то у вас будет два скробблера установлено)</li>
+</ul>
+<h5>Альфа 6 (2009-03-28)</h5>
+<ul>
+<li>теперь скробблер называется Janeth. Вообще практика называть программы женскими именами очень сексуальна. Спасибо <a href="http://chebotaev.ru/">Антону Че</a> за придумывание такого прекрасного называния, и <a href="http://geevee.ru">Евгению Геращенко</a> за убеждение меня, что оно прекрасно.</li>
+<li>сэкономлена память</li>
+<li>сообщения об ошибках ближе к пользователю</li>
+<li>переписан Requester</li>
+</ul>
+<h5>Альфа 5 (2009-03-19)</h5>
+<ul>
+<li>minor bug-fixes</li>
+</ul>
+<h5>Альфа 4 (2009-03-18)</h5>
+<ul>
+<li>трек-инфо при скробллинге больше уезжает из поля зрения</li>
+<li>большие обложки теперь не вылезают куда не следует</li>
+<li>красивая кнопочка Установить</li>
+<li>мелкие багфиксы</li>
+<li>подвинул album-art ближе к названию альбома, а не названию трека</li>
+<li>редактирование автора-названия для отправки (кликните значок играющего трека)</li>
+<li>скробблим со стен</li>
+<li>возможность включить/выключить скробблер</li>
+<li>больше не даем пользователю подключаться по собственному желанию</li>
+<li>возможность отменить или повторить неудачный скробблинг</li>
+<li>сильно переделана архитектура: убрал рисование кнопочек из объекта scrobbler, и хранение состояния из conn</li>
+<li>добился еще большей надежности. Ни один трек не будет забыт</li>
+</ul>
+<h5>Альфа 3 (2009-03-03)</h5>
+<ul>
+<li>аааааа… В FF в имени исполнителя дважды экранировались пробелы. Теперь все хорошо.</li>
+<li>еще пара каких-то мелочей</li>
+</ul>
+<h5>Альфа 2 (2009-03-01)</h5>
+<ul>
+<li>появилась загрузка картинок альбома и информации о произведении с Last.fm</li>
+<li>написан нормальный текст здесь, руководство по использованию и установке</li>
+<li>решена проблема с анимацией в Firefox: иногда значок воспроизведения замирает</li>
+</ul>
+<h5>Альфа 1 (2009-02-28)</h5>
+<ul>
+<li>Первый релиз. Что еще сказать?</li>
+</ul>
+
+<h3><a name="code">Код</a></h3>
+<p>Если вы JS-программист, никто вам не мешает что-нибудь в этом скрипте изменить,
+так как лицензия — LGPL.
+Особенно приветствуется, если вы портируете его под Chrome, Safari или IE
+(для них есть свои Greasemonkey движки). С хромом и сафари должно быть все несложно.
+Также приветствуется отправка патчей мне на email (cyril7<span class="nospam">NOSPAM</span>@<span class="nospam">NOSPAM</span>gmail.com)</p>
+<p>Мне в данный момент лень описывать как это все работает. Перечислю лишь объекты, задействованные в процессе:</p>
+<ul>
+<li>scrobbler — объект, инкапсулирующий поведение на странице вконтакте. Когда музыку включают/выключают,
+	у него вызываются соответствующие методы. Он ответственен за то, чтобы создавать объекты Track и отправлять им
+	соответствующие внешние события.</li>
+<li>scrobbler.fm. Он инкапсулирует сервис Last.fm. Логинит, когда надо, когда надо ставит запрос в очередь,
+	склонен парсить ответы ласт.фма. В него слудует со временем передвинуть хранение состояния из scrobbler.fm.conn.</li>
+<li>ScrobblerIcon демонстрирует значок ласт.фма и отображает статус соединения. Является observer'ом scrobbler.fm'а.</li>
+<li>PlayingIcon отображает статус проигрываемого трека. Является observer'ом Track'а.</li>
+<li>AdvancedControl инкапсулирует интерфейс редактирования информации о треке и управления его скробблингом (то, что отображается по клику на PlayingIcon). Является observer'ом Track'а.</li>
+<li>InfoPanel — панелька с информациейй о композиции. Следит за Track'ом.</li>
+<li>Track инкапсулирует проигрываемый трек.</li>
+<li>scrobbler.fm.conn. Инкапсулирует соединение. Бывает разным для Оперы и для FF. Все потому что Опера не
+	разрешает кросс-доменных запросов даже из UserJS (и, видимо, не разрешит). FF-ный conn работает
+	просто и естесственно — вызовами GM_xmlhttpRequest. Оперный — ужасно запутанным образом
+	делает запросы в Iframe'ах, передавая данные через window.name.
+	Для этого использует вспомогательный объект
+	Requester, который в свою очередь возвращает данные через самопальный Deferred. Кто разберется в таких
+	дебрях — большой молодец.</li>
+</ul>
+<p>Таким образом браузерно-специфичной частью является fm.conn. Он зависит от способа отправки асинхронных запросов.
+Таким образом, меняя его можно заставить скробблер работать в других браузерах.</p>
+<p>Сайто-специфичными являются scrobbler, ScrobblerIcon, PlayingIcon, AdvancedControl и InfoPanel.
+Для того, чтоб скробблер работал на других сайтах (кроме вконтакте) надо реализовать интерфейс scrobbler и, опционально,
+объекты отображающие состояние.</p>
+
+<h3><a name="more">Что еще почитать</a></h3>
+<ul>
+<li><a href="http://vkontakte.ru/notes.php?act=s&amp;nid=8367692&amp;oid=1584415">моя заметка вконтакте</a>, где я жду ваших комментариев</li>
+<li><a href="http://vkontakte.ru/club128">группа про last.fm</a> вконтакте (они там спали и видели такой скрипт)</li>
+<li><a href="http://userscripts.org/scripts/show/41711" onclick="javascript: pageTracker._trackPageview('/out/userscripts.org/41711'); ">другой скробблер vkontakte</a> (но он хреновый: ненадежный, просит пароль, не совместим с оперой, неправильно считает время воспроизведения)</li>
+<li><a href="http://userscripts.org/scripts/show/23867">прекрасный скрипт</a>, чтобы напрямую ходить по внешним ссылкам (под Оперой лучше его дополнить <a href="http://userscripts.org/scripts/show/26237">этим</a>).</li>
+<li>лучшие скачивалки: <a href="http://userscripts.org/scripts/show/19252">видео</a>, а для аудио все безобразные — свою напишу</li>
+<li><a href="http://www.greasespot.net/">про Greasemonkey</a></li>
+<li><a href="http://www.opera.com/docs/userjs/">про UserJS</a></li>
+</ul>
+
+</div> <!-- #content -->
+
+<div id="copyright">
+<div>© 2009 Кирилл Николаев.</div>
+<div>Распространяется под лицензией <a href="http://www.gnu.org/copyleft/lesser.html">GNU LGPL</a>. Автор никак не связан с орагнизациями Вконтакте и Last.fm.</div>
+</div>
+
+</div> <!-- #about.root -->
+</body>
+</html>

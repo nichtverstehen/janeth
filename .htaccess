@@ -1,0 +1,3 @@
+RewriteEngine Off
+AddCharset UTF-8 .html
+AddType application/x-force-download .js
