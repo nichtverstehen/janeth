@@ -3,9 +3,11 @@
 // Compatible with Opera and Firefox. Maybe IE in future.
 // Tested with Opera 9.5, Opera 10, Firefox3 (GM 0.8).
 //
+// alpha 2 (2009-02-28)
+//
 // More info at http://nichtverstehen.de/vkontakte-scrobbler
 //
-// Author: Cyril Nikolaev <cyril7@gmail.com>
+// Original Author: Cyril Nikolaev <cyril7@gmail.com>
 // Licensed under GNU LGPL (http://www.gnu.org/copyleft/lesser.html)
 //
 // ==UserScript==
@@ -23,19 +25,21 @@
 // @include http://vkontakte.ru/profile.php*
 // @include http://vkontakte.ru/images/qmark.gif
 // @include http://ext.last.fm/1.0/
-// @include http://*.audioscrobbler.com/*
+// @include http://post.audioscrobbler.com/*
+// @include http://post2.audioscrobbler.com/*
+// @include http://ws.audioscrobbler.com/*
 // ==/UserScript==
 
 (function() { /*  begin private namespace */
 
 var log_ = function(s) {
-	if (window.opera)
+	/*if (window.opera)
 		window.opera.postError(s);
 	else if (console && console.log)
-		console.log(s);
+		console.log(s);*/
 }
 
-var scrobbler = Scrobbler = {
+var scrobbler = {
 	fm: null,
 	updateInterval: 1000,
 	
@@ -59,7 +63,6 @@ var scrobbler = Scrobbler = {
 	
 	
 	initialize: function() {
-		this.fm.display = this;
 		var t_ = this;
 		
 		this.scrobblerDiv = document.createElement('a');
@@ -108,6 +111,9 @@ var scrobbler = Scrobbler = {
 			else
 				sideBar.appendChild(this.scrobblerDiv);
 		}
+		
+		// should we download and show lfm track info. If we have site for that - yes
+		this.hasInfoPanel = location.pathname.indexOf('/audio.php') == 0;
 	},
 	
 	scrobblerAnonymous: function() {
@@ -143,6 +149,7 @@ var scrobbler = Scrobbler = {
 		this.scrobblerDiv.style.backgroundColor = '#517EA6';
 		this.scrobblerDiv.style.borderColor = '#205B7F';
 	},
+	
 	playingUpdate: function() {
 		if (!this.playingDiv) {
 			this.playingDiv = document.createElement('div');
@@ -184,7 +191,9 @@ var scrobbler = Scrobbler = {
 		if (!sD) {
 			sD = d.appendChild(document.createElement('div'));
 			sD.setAttribute('id', 'scrobbleStatus'+id);
-			sD.setAttribute('style', 'float: right; width: 12px; height: 12px; margin: 5px 7px 0px 1px; background-position: center center; background-repeat: no-repeat;');
+			sD.setAttribute('style', 'float: right; width: 12px; height: 12px; '+
+				'margin: 5px 7px 0px 1px; background-position: center center; '+
+				'background-repeat: no-repeat;');
 		}
 		
 		if (status) {
@@ -196,8 +205,61 @@ var scrobbler = Scrobbler = {
 		}
 	},
 	
+	updateInfo: function() {
+		var infoDiv = document.getElementById('lastfm_trackInfo')
+		if (!infoDiv) {
+			var p = document.getElementById('searchAudio');
+			if (!p) return;
+			infoDiv = p.parentNode.appendChild(document.createElement('div'));
+			infoDiv.id = 'lastfm_trackInfo';
+			infoDiv.setAttribute('style', 'background: #eee; padding: .5em; margin-top: 1em;');
+			
+		}
+		if (infoDiv) infoDiv.style.display = 'block';
+		
+		var info = this.track.info;
+
+		var albumart = '';
+		if (info.album != undefined && info.album.image != undefined)  {
+			var iurl = info.album.image[0]['#text'];
+			var n = info.album.image.length;
+			for (var i = 0; i < n; ++i) {
+				if (info.album.image[i]['size'] == 'medium')  {
+					iurl = info.album.image[i]['#text'];
+				}
+			}
+			albumart = '<div style="text-align: center"><img src="'+iurl+'"/></div>\n';
+		}
+		var tags = [];
+		if (info.toptags.tag  != undefined) {
+			n = info.toptags.tag.length;
+			for (var i = 0; i < n; ++i) {
+				var tag = info.toptags.tag[i];
+				tags.push('\n<a href="'+tag.url+'" target="_blank">'+tag.name+'</a>');
+			}
+		}
+		var artist = '', album = '';
+		if (info.artist != undefined)
+			artist = '<a href="'+info.artist.url+'" target="_blank">'+info.artist.name+'</a>';
+		if (info.album != undefined)
+			album = '<div style="margin-top: .5em; text-align: center;"><a href="'+info.album.url+'" target="_blank">'+info.album.title+'</a></div>\n';
+		
+		var html = '<div>'+
+			'<div style="font-weight: bold; text-align: center;"><a href="'+info.url+'" target="_blank">'+info.name+'</a></div>\n'+
+			'<div style="text-align: center;">('+artist+')</div>'+ albumart + album +
+			'<div style="margin-top: .5em;">Теги: ' + tags.join(', ') + '</div>'+
+			'<div>'+info.playcount+' прослушиваний</div>\n'+
+			'</div>';
+			
+		infoDiv.innerHTML = html;
+	},
+	hideInfo: function() {
+		var infoDiv = document.getElementById('lastfm_trackInfo')
+		if (infoDiv) infoDiv.style.display = 'none';
+	},
+	
 	start: function(rid) {
-		stop();
+		this.stop();
 		
 		var btnE = document.getElementById('imgbutton'+rid);
 		if (!btnE) return;
@@ -217,6 +279,9 @@ var scrobbler = Scrobbler = {
 		
 		var t_ = this;
 		this.fm.nowPlaying(this.track, function() { t_.nowPlayingSuccess(rid); }, function() { t_.nowPlayingFail(rid); });
+		
+		if (this.hasInfoPanel) // download and show info
+			this.fm.getTrackInfo(this.track, function(info) { t_.track.info = info; t_.updateInfo(); });
 		
 		this.play(rid);
 		
@@ -251,7 +316,9 @@ var scrobbler = Scrobbler = {
 		
 		this.track.noScrobble = true;
 		var t_ = this;
-		this.fm.scrobble(this.track, function () { t_.successScrobble(id); }, function (msg) { t_.failScrobble(id); }, function() { t_.failScrobble(id); });
+		this.fm.scrobble(this.track, function () { t_.successScrobble(id); }, 
+		function (msg) { t_.failScrobble(id); }, function() { t_.failScrobble(id); });
+		
 	},
 	
 	pause: function(id) {
@@ -270,6 +337,7 @@ var scrobbler = Scrobbler = {
 	
 	stop: function() {
 		this.pause();
+		this.hideInfo();
 		this.track = {};
 		window.clearInterval(this.timer);
 		
@@ -306,7 +374,19 @@ scrobbler.fm = {
 	conn: null,
 	username: '',
 	
-	display: null,
+	display: scrobbler,
+	
+	encodeTrackInfo: function(track) {
+		var r = {};
+		r.artist = track['artist'];
+		r.title = track['title'];
+		r.secs = track['len'] ? track['len'] : '';
+		r.album = track['album'] ? track['album'] : '';
+		r.trackn = track['trackn'] ? track['trackn'] : '';
+		r.mbid = track['mbid'] ? track['mbid'] : '';
+		r.startTime = track['startTime'] ? track['startTime'] : '';
+		return r;
+	},
 	
 	login:  function(fn) {
 		// TODO: use cookie (or GM)
@@ -323,24 +403,43 @@ scrobbler.fm = {
 	
 	nowPlaying: function(rtrack, success) {
 		var t_ = this;
-		var fn = function() { t_.nowPlaying(rtrack, success); }
+		var tr = this.encodeTrackInfo(rtrack);
+		var fn = function() { t_.nowPlaying(tr, success); }
 		if (!this.conn.logged()) {
 			this.login(fn); 
 		}
-		this.conn.nowPlaying(rtrack, success,
+		this.conn.nowPlaying(tr, success,
 			function() { t_.handleBadSession( fn ); } 
 		);
 	},
 	
 	scrobble: function(rtrack, success, fail) {
 		var t_ = this;
-		this.conn.scrobble(rtrack, success,
+		var tr = this.encodeTrackInfo(rtrack);
+		this.conn.scrobble(tr, success,
 			function() { 
-				t_.handleBadSession( function() { t_.scrobble(rtrack, success, fail); } );
+				t_.handleBadSession( function() { t_.scrobble(tr, success, fail); } );
 			},
 			function() { if (fail) fail(msg); },
 			function() { if (fail) fail(0); }
 		);
+	},
+	
+	getTrackInfo: function(rtrack, successHandler, errorHandler) {
+		var t_ = this;
+		var tr = this.encodeTrackInfo(rtrack);
+		var gotError = function (code) {
+			log_("FM: error at getTrackInfo "+code);
+			if (errorHandler) errorHandler(code);
+		}
+		this.conn.getTrackInfo(tr, function(infoText) {
+			var info = eval('('+infoText+')');
+			if (info['error'] != undefined) {
+				gotError(code);
+			} else {
+				successHandler(info.track);
+			}
+		}, gotError);
 	},
 	
 	handleBadSession: function(fn) {
@@ -367,15 +466,10 @@ scrobbler.fm = {
 	}
 };
 
-if (location.hostname == 'vkontakte.ru' && 
-	(location.pathname.indexOf('/audio') == 0 ||
-	location.pathname.indexOf('/id') == 0 ||
-	location.pathname.indexOf('/profile.php') == 0 ||
-	location.pathname.indexOf('/club') == 0)) {
-	// vkontakte part
-	// Hook up to vkontakte's audio object
-	log_('Vkontakte part started: ');
+
+var hookVkontakte = function() {
 	var win = (typeof unsafeWindow != 'undefined') ? unsafeWindow : window;
+	if (typeof win.AudioObject == 'undefined') return; // not vkontakte.ru?
 	
 	var oldHandler = win.AudioObject.stateChanged;
 	win.AudioObject.stateChanged = function(id, wall, state, message) {
@@ -407,12 +501,39 @@ if (location.hostname == 'vkontakte.ru' &&
 	win.getPageContent = function(offset, inTop, afterFunc, obj) {
 		log_("getpagecontent");
 		setTimeout(function(){scrobbler.stop();},0);
-		return oldPageHandler.call(offset, inTop, afterFunc, obj);
+		return oldPageHandler(offset, inTop, afterFunc, obj);
 	}
 	
-	window.setTimeout(function(){ scrobbler.initialize(); }, 1000);
+	window.setTimeout(function(){ scrobbler.initialize(); }, 0);
 }
 
+if (location.hostname == 'vkontakte.ru' && 
+	(location.pathname.indexOf('/audio') == 0 ||
+	location.pathname.indexOf('/id') == 0 ||
+	location.pathname.indexOf('/profile.php') == 0 ||
+	location.pathname.indexOf('/club') == 0)) {
+	// vkontakte part
+	// Hook up to vkontakte's audio object
+	log_('Vkontakte part started: ');
+	hookVkontakte();
+}
+
+
+/////////////////////////////////////////////////////
+//              CONNECTION OBJECTS                 //
+// incapulate browser-specific requests to LFM API //
+/////////////////////////////////////////////////////
+
+
+	
+var arrayUriEncode = function(a) {
+	var r = {};
+	for(var i in a) {
+		r[i] = encodeURIComponent(a[i]);
+	}
+	return r;
+}
+	
 //  Vkontakte-ff-connection  (browser-specific)
 var ff_conn = {
 	state: 0, // 0 - no connection, 1 - connecting, 2 - logged in
@@ -424,6 +545,7 @@ var ff_conn = {
 	
 	clientName: 'tst', // vkf
 	clientVer: '1.0',
+	apiKey: '961e42339184d582f05c850ada3e17f5',
 	
 	/* successHandler(username, session, np_url, scr_url), anonymousHandler(), failHandler(message), errorHandler(message) */
 	login: function(successHandler, anonymousHandler, failHandler, errorHandler) {
@@ -541,12 +663,7 @@ var ff_conn = {
 			return;
 		}
 		
-		var artist = encodeURIComponent(track['artist']);
-		var title = encodeURIComponent(track['title']);
-		var secs = encodeURIComponent(track['len'] ? track['len'] : '');
-		var album = encodeURIComponent(track['album'] ? track['album'] : '');
-		var trackn = encodeURIComponent(track['trackn'] ? track['trackn'] : '');
-		var mbid = encodeURIComponent(track['mbid'] ? track['mbid'] : '');
+		track = arrayUriEncode(track);
 		
 		var cancel = false; var timeout = 0; // to set from timeout
 		var gotError = function(code) { if (errorHandler) errorHandler(); }
@@ -563,7 +680,8 @@ var ff_conn = {
 				if (badSessionHandler) badSessionHandler();
 			} else gotError();
 		};
-		var poststring = 's='+this.session+'&a='+artist+'&t='+title+'&b='+album+'&l='+secs+'&n='+trackn+'&m='+mbid;
+		var poststring = 's='+this.session+'&a='+track.artist+'&t='+track.title+'&b='+track.album+'&l='+
+			track.secs+'&n='+track.trackn+'&m='+track.mbid;
 		GM_xmlhttpRequest({ method: 'POST', url: this.npUrl,
 			headers: {'Content-type': 'application/x-www-form-urlencoded', 'Content-Length': poststring.length},
 			data: poststring,
@@ -583,12 +701,7 @@ var ff_conn = {
 			return;
 		}
 		
-		var artist = encodeURIComponent(track['artist']);
-		var title = encodeURIComponent(track['title']);
-		var secs = encodeURIComponent(track['len'] ? track['len'] : '');
-		var album = encodeURIComponent(track['album'] ? track['album'] : '');
-		var trackn = encodeURIComponent(track['trackn'] ? track['trackn'] : '');
-		var mbid = encodeURIComponent(track['mbid'] ? track['mbid'] : '');
+		track = arrayUriEncode(track);
 		
 		var cancel = false; var timeout = 0; // timeout came
 		var gotError = function(responseDetails) { if (errorHandler) errorHandler(); }
@@ -608,8 +721,8 @@ var ff_conn = {
 			} else gotError();
 		};
 		
-		var poststring = 's='+this.session+'&a[0]='+artist+'&t[0]='+title+'&i[0]='+track['startTime']+
-			'&o[0]=P&r[0]=&b[0]='+album+'&l[0]='+secs+'&n[0]='+trackn+'&m[0]='+mbid;
+		var poststring = 's='+this.session+'&a[0]='+encodeURIComponent(track.artist)+'&t[0]='+track.title+'&i[0]='+track.startTime+
+			'&o[0]=P&r[0]=&b[0]='+track.album+'&l[0]='+track.secs+'&n[0]='+track.trackn+'&m[0]='+track.mbid;
 		GM_xmlhttpRequest({ method: 'POST', url: this.scrUrl,
 			headers: {'Content-type': 'application/x-www-form-urlencoded', 'Content-Length': poststring.length},
 			data: poststring,
@@ -619,7 +732,29 @@ var ff_conn = {
 			cancel = true;
 			gotError('timeout');
 		}, 15000);
-	}
+	},
+	
+	// successHandler(info), [ errorHandler(msg) ]
+	getTrackInfo: function(track, successHandler, errorHandler) {
+		log_("Conn: Requested info " + track['artist'] + " " + track['title']);
+		
+		track = arrayUriEncode(track);
+		var cancel = false; var timeout = 0; // to set from timeout
+		var gotError = function(code) { if (errorHandler) errorHandler('connection error'); }
+		var ok = function(responseDetails){
+			if (cancel) return; clearTimeout(timeout); // timeout
+
+			successHandler(responseDetails.responseText);
+		};
+		var request = 'http://ws.audioscrobbler.com/2.0/?format=json'+
+			'&method=track.getinfo&api_key='+this.apiKey+'&artist='+track.artist+'&track='+track.title+'&mbid='+track.mbid;
+		GM_xmlhttpRequest({ method: 'GET', url: request, onload: ok, onerror: gotError});
+			
+		timeout = setTimeout(function() {
+			cancel = true;
+			gotError('timeout');
+		}, 15000);
+	},
 };
 	
 //  Vkontakte-opera-connection  (browser-specific)
@@ -631,8 +766,9 @@ var opera_conn = {
 	scrUrl: '',
 	bad: false, // permanent login error (banned, badauth)
 	
-	clientName: 'tst', // vkf
+	clientName: 'tst',
 	clientVer: '1.0',
+	apiKey: '961e42339184d582f05c850ada3e17f5',
 	
 	stub_url: 'http://vkontakte.ru/images/qmark.gif',
 	
@@ -733,24 +869,17 @@ var opera_conn = {
 			return;
 		}
 		
-		var artist = track['artist'];
-		var title = track['title'];
-		var secs = track['len'] ? track['len'] : '';
-		var album = track['album'] ? track['album'] : '';
-		var trackn = track['trackn'] ? track['trackn'] : '';
-		var mbid = track['mbid'] ? track['mbid'] : '';
-		
 		var req = Requester.request('', this.stub_url, '');
 		var reqWin = req.iframe.contentWindow;
 		reqWin.document.documentElement.innerHTML = '<html><head></head><body>'+
 			'<form action="'+this.npUrl+'" method="post" id="postForm">'+
 			'<input type="text" name="s" value="'+this.session+'"/>'+
-			'<input type="text" name="a" value="'+artist+'"/>'+
-			'<input type="text" name="t" value="'+title+'"/>'+
-			'<input type="text" name="b" value="'+album+'"/>'+
-			'<input type="text" name="l" value="'+secs+'"/>'+
-			'<input type="text" name="n" value="'+trackn+'"/>'+
-			'<input type="text" name="m" value="'+mbid+'"/>'+
+			'<input type="text" name="a" value="'+track.artist+'"/>'+
+			'<input type="text" name="t" value="'+track.title+'"/>'+
+			'<input type="text" name="b" value="'+track.album+'"/>'+
+			'<input type="text" name="l" value="'+track.secs+'"/>'+
+			'<input type="text" name="n" value="'+track.trackn+'"/>'+
+			'<input type="text" name="m" value="'+track.mbid+'"/>'+
 			'</form></body></html>';
 		var form = reqWin.document.getElementById('postForm');
 		form.submit();
@@ -778,27 +907,20 @@ var opera_conn = {
 			return;
 		}
 		
-		var artist = track['artist'];
-		var title = track['title'];
-		var secs = track['len'] ? track['len'] : '';
-		var album = track['album'] ? track['album'] : '';
-		var trackn = track['trackn'] ? track['trackn'] : '';
-		var mbid = track['mbid'] ? track['mbid'] : '';
-		
 		var req = Requester.request('', this.stub_url, '');
 		var reqWin = req.iframe.contentWindow;
 		reqWin.document.documentElement.innerHTML = '<html><head></head><body>'+
 			'<form action="'+this.scrUrl+'" method="post" id="postForm">'+
 			'<input type="text" name="s" value="'+this.session+'"/>'+
-			'<input type="text" name="a[0]" value="'+artist+'"/>'+
-			'<input type="text" name="t[0]" value="'+title+'"/>'+
+			'<input type="text" name="a[0]" value="'+track.artist+'"/>'+
+			'<input type="text" name="t[0]" value="'+track.title+'"/>'+
 			'<input type="text" name="i[0]" value="'+track['startTime']+'"/>'+
 			'<input type="text" name="o[0]" value="P"/>'+ //  chosen by user
 			'<input type="text" name="r[0]" value=""/>'+ //  no love/ban
-			'<input type="text" name="b[0]" value="'+album+'"/>'+
-			'<input type="text" name="l[0]" value="'+secs+'"/>'+
-			'<input type="text" name="n[0]" value="'+trackn+'"/>'+
-			'<input type="text" name="m[0]" value="'+mbid+'"/>'+
+			'<input type="text" name="b[0]" value="'+track.album+'"/>'+
+			'<input type="text" name="l[0]" value="'+track.secs+'"/>'+
+			'<input type="text" name="n[0]" value="'+track.trackn+'"/>'+
+			'<input type="text" name="m[0]" value="'+track.mbid+'"/>'+
 			'</form></body></html>';
 		var form = reqWin.document.getElementById('postForm');
 		form.submit();
@@ -817,12 +939,60 @@ var opera_conn = {
 				if (failHandler) failHandler(status.slice(7));
 			} else gotError();
 		});
+	},
+	
+	// successHandler(info), [ errorHandler(msg) ]
+	getTrackInfo: function(track, successHandler, errorHandler) {
+		log_("Conn: Requested info " + track['artist'] + " " + track['title']);
+		
+		track = arrayUriEncode(track);
+		var uri = 'http://ws.audioscrobbler.com/2.0/?format=json&callback=a'+
+			'&method=track.getinfo&api_key='+this.apiKey+'&artist='+track.artist+'&track='+track.title+'&mbid='+track.mbid;
+		var req = Requester.request(uri, this.stub_url, '', 20000);
+		
+		req.addErrback(function(code) { if (errorHandler) errorHandler(code); });
+		req.addCallback(function(result){
+			log_('Conn: trackinfo callback');
+			successHandler(result);
+		});
+	},
+};
+
+// empty connection (logs requests)
+var empty = {
+	/* successHandler(username, session, np_url, scr_url), anonymousHandler(), failHandler(message), errorHandler() */
+	login: function(successHandler, anonymousHandler, failHandler, errorHandler) {
+		log_("Login requested");
+		successHandler();
+	},
+	
+	useSession: function(session, np_url, scr_url) {
+		log_("Use session " + session + " requested");
+	},
+	
+	logged: function() {
+		return true;
+	},
+	
+	/* successHandler(), badSessionHandler(), errorHandler() */
+	nowPlaying: function(track, successHandler, badSessionHandler, errorHandler) {
+		log_("Requested now playing " + track['artist'] + " " + track['title']);
+		successHandler();
+	},
+	
+	/* successHandler(), badSessionHandler(), failHandler(message), errorHandler() */
+	scrobble: function(track, successHandler, badSessionHandler, failHandler, errorHandler) {
+		log_("Requested scrobble " + track['artist'] + " " + track['title']);
+		successHandler();
 	}
 };
 
 scrobbler.fm.conn = (typeof GM_xmlhttpRequest != 'undefined') ? ff_conn : opera_conn;
 
 
+//////////////////////////////////////////////////////////
+//              Opera support functions                 //
+//////////////////////////////////////////////////////////
 var postAudioscrobbler = function() {
 	log_('Returning post.audioscrobbler.com data: '+document.documentElement.innerText);
 	var r = document.documentElement.innerText.split('\n');
@@ -833,8 +1003,17 @@ if (location.hostname == 'post.audioscrobbler.com' || location.hostname == 'post
 	setTimeout(postAudioscrobbler, 0);
 }
 
-var createRequestObject = function()
-{
+var wsAudioscrobbler = function() {
+	log_('Returning ws.audioscrobbler.com data: '+document.documentElement.innerText);
+	var r = document.documentElement.innerText.substr(1).replace(/;/g,'');
+	Requester.returnData(true, r, scrobbler.fm.conn.stub_url);
+}
+if (location.hostname == 'ws.audioscrobbler.com') {
+	log_('at ws.audioscrobbler.com');
+	setTimeout(wsAudioscrobbler, 0);
+}
+
+var createRequestObject = function() {
 	if (window.XMLHttpRequest) 
 		try { return new XMLHttpRequest(); } catch (e) { }
 	else
@@ -957,7 +1136,7 @@ Deferred.prototype = {
    The data is passed through window.name varible. */
 Requester = {
 	de_objects_: {},
-	default_timeout: 5000,
+	default_timeout: 15000,
 	
 	getDeferred: function(i) {
 		if (!(i in this.de_objects_)) return null;
@@ -968,7 +1147,7 @@ Requester = {
 		if (!(a instanceof Array)) a = [a];
 		var r = '[ ';
 		for(var i = 0; i < a.length; ++i) {
-			r += '\'' + a[i].toString().replace('\'', '\\\'') + '\', ';
+			r += '\'' + a[i].toString().replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/'/g, "\\'") + '\', ';
 		}
 		return (r += ']');
 	},
@@ -989,7 +1168,7 @@ Requester = {
 			g[i] = s.slice(p);
 		}
 		
-		log_('expl_'+delim+'_'+s+':' + this.serializeArray(g));
+		//log_('expl_'+delim+'_'+s+':' + this.serializeArray(g));
 		return g;
 	},
 
@@ -1072,35 +1251,5 @@ if (location.href == scrobbler.fm.conn.stub_url)
 	log_('in stub');
 	Requester.runStub();
 }
-
-
-// empty connection (logs requests)
-var g ={
-	/* successHandler(username, session, np_url, scr_url), anonymousHandler(), failHandler(message), errorHandler() */
-	login: function(successHandler, anonymousHandler, failHandler, errorHandler) {
-		log_("Login requested");
-		successHandler();
-	},
-	
-	useSession: function(session, np_url, scr_url) {
-		log_("Use session " + session + " requested");
-	},
-	
-	logged: function() {
-		return true;
-	},
-	
-	/* successHandler(), badSessionHandler(), errorHandler() */
-	nowPlaying: function(track, successHandler, badSessionHandler, errorHandler) {
-		log_("Requested now playing " + track['artist'] + " " + track['title']);
-		successHandler();
-	},
-	
-	/* successHandler(), badSessionHandler(), failHandler(message), errorHandler() */
-	scrobble: function(track, successHandler, badSessionHandler, failHandler, errorHandler) {
-		log_("Requested scrobble " + track['artist'] + " " + track['title']);
-		successHandler();
-	}
-};
 
 })();
