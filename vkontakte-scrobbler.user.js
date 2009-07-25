@@ -1,11 +1,11 @@
-﻿// Janeth
+// Janeth
 //
 // Greasemonkey/UserJS script to scrobble vkontakte tracks plays.
 // Compatible with Opera, Firefox and Chrome. 
 // Safari/IE may be implemented in future.
 // Tested with Opera 9.5, Opera 10, Firefox3 (GM 0.8), Chrome 2.0.172.28.
 //
-// beta 2 (2009-05-24)
+// beta 3 (2009-05-26)
 //
 // More info at http://nichtverstehen.de/vkontakte-scrobbler
 //
@@ -15,7 +15,7 @@
 // ==UserScript==
 // @name          Janeth vkontakte-scrobbler
 // @namespace     http://nichtverstehen.de/vkontakte-scrobbler
-// @version       0.2
+// @version       0.3
 // @description   scrobble vkontakte audiotrack plays
 //
 // @copyright 2009, Cyril Nikolaev (http://nichtverstehen.de)
@@ -641,15 +641,15 @@ var scrobbler = {
 var getWindow = function(doc) {
 	if (!doc)
 		doc = document;
-		
-	var win = doc.parentWindow;
-	if (win) return win;
 	
-	win = doc.defaultView;
-	if (win.unsafeWindow) {
-		win = win.unsafeWindow;
+	if (typeof unsafeWindow != 'undefined') {
+		return unsafeWindow;
+	}
+	if (doc.parentWindow) {
+		return doc.parentWindow;
 	}
 	
+	var win = doc.defaultView;
 	if (navigator.userAgent.indexOf('WebKit') >= 0) {
 		var scriptElement = doc.createElement('script');
 		scriptElement.appendChild(doc.createTextNode('document.parentWindow=window'));
