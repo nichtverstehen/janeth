@@ -4,7 +4,7 @@
 // Compatible with Opera and Firefox. Maybe Safari/Chrome in future.
 // Tested with Opera 9.5, Opera 10, Firefox3 (GM 0.8).
 //
-// alpha 6 (2009-03-28)
+// beta 1 (2009-04-07)
 //
 // More info at http://nichtverstehen.de/vkontakte-scrobbler
 //
@@ -683,8 +683,8 @@ S.fm = {
 	npUrl: '', // http://post.audioscrobbler.com:80/np_1.2
 	scrUrl: '', // http://post2.audioscrobbler.com:80/protocol_1.2
 	
-	clientName: 'tst', // vkf
-	clientVer: '1.0',
+	clientName: 'jvs',
+	clientVer: '0.1',
 	apiKey: '961e42339184d582f05c850ada3e17f5',
 	
 	logged: function() {
