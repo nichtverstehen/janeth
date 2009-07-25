@@ -3,7 +3,7 @@
 // Compatible with Opera and Firefox. Maybe Safari/Chrome in future.
 // Tested with Opera 9.5, Opera 10, Firefox3 (GM 0.8).
 //
-// alpha 5 (2009-03-18)
+// alpha 5 (2009-03-19)
 //
 // More info at http://nichtverstehen.de/vkontakte-scrobbler
 //
@@ -227,7 +227,7 @@ AdvancedControl.prototype = {
 	},
 	
 	stop: function() {
-		close(false);
+		this.close(false);
 	},
 	
 	close: function(save) {
@@ -240,8 +240,14 @@ AdvancedControl.prototype = {
 			this.track.title = t.value;
 		}
 		
-		this.edit.parentNode.removeChild(this.edit);
-		document.removeEventListener('click', this.kp, false);
+		if (this.edit) {
+			this.edit.parentNode.removeChild(this.edit);
+			this.edit = null;
+		}
+		if (this.kp) {
+			document.removeEventListener('click', this.kp, false);
+			this.kp = null;
+		}
 	}
 }
 
@@ -474,7 +480,7 @@ Track.prototype = {
 		
 		this.startTime = Math.floor((new Date()).getTime() / 1000);
 		if (this.len < 30) this.noScrobble = true;
-		this.scrobbleTime = Math.min(20, Math.floor(this.len/2));//240
+		this.scrobbleTime = Math.min(240, Math.floor(this.len/2));//240
 		
 		var t_ = this;
 		S.fm.nowPlaying(this, function() { t_.nowPlayingSuccess(); }, function() { t_.nowPlayingFail(); });
@@ -665,11 +671,7 @@ if (location.hostname == 'vkontakte.ru' &&
 	location.pathname.indexOf('/club') == 0)) {
 	// vkontakte part
 	// Hook up to vkontakte's audio object
-	if (window.opera) {
-		document.addEventListener('DOMContentLoaded', hookVkontakte, false);
-	} else {
-		hookVkontakte();
-	}
+	hookVkontakte();
 }
 
 S.fm = {
@@ -812,7 +814,7 @@ S.fm = {
 			function() { 
 				t_.handleBadSession( function() { t_.scrobble(tr, success, fail); } );
 			},
-			function() { if (fail) fail(msg); },
+			function(msg) { if (fail) fail(msg); },
 			function() { if (fail) fail(0); }
 		);
 	},
@@ -1006,7 +1008,7 @@ var ff_conn = {
 		};
 		
 		var poststring = 's='+cdata.session+'&a[0]='+track.artist+'&t[0]='+track.title+'&i[0]='+track.startTime+
-			'&o[0]=P&r[0]='+track.rating+'&b[0]='+track.album+'&l[0]='+track.secs+'&n[0]='+track.trackn+'&m[0]='+track.mbid;
+			'&o[0]=P&r[0]=&b[0]='+track.album+'&l[0]='+track.secs+'&n[0]='+track.trackn+'&m[0]='+track.mbid;
 		GM_xmlhttpRequest({ method: 'POST', url: cdata.scrUrl,
 			headers: {'Content-type': 'application/x-www-form-urlencoded', 'Content-Length': poststring.length},
 			data: poststring,
