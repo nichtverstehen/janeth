@@ -1,10 +1,11 @@
 ﻿// Janeth
 //
 // Greasemonkey/UserJS script to scrobble vkontakte tracks plays.
-// Compatible with Opera and Firefox. Maybe Safari/Chrome in future.
-// Tested with Opera 9.5, Opera 10, Firefox3 (GM 0.8).
+// Compatible with Opera, Firefox and Chrome. 
+// Safari/IE may be implemented in future.
+// Tested with Opera 9.5, Opera 10, Firefox3 (GM 0.8), Chrome 2.0.172.28.
 //
-// beta 1 (2009-04-07)
+// beta 2 (2009-05-24)
 //
 // More info at http://nichtverstehen.de/vkontakte-scrobbler
 //
@@ -14,7 +15,7 @@
 // ==UserScript==
 // @name          Janeth vkontakte-scrobbler
 // @namespace     http://nichtverstehen.de/vkontakte-scrobbler
-// @version       0.1
+// @version       0.2
 // @description   scrobble vkontakte audiotrack plays
 //
 // @copyright 2009, Cyril Nikolaev (http://nichtverstehen.de)
@@ -24,8 +25,10 @@
 // @include http://vkontakte.ru/id*
 // @include http://vkontakte.ru/club*
 // @include http://vkontakte.ru/profile.php*
+// @include http://vkontakte.ru/gsearch.php*
+//
 // @include http://vkontakte.ru/images/qmark.gif
-// @include http://ext.last.fm/1.0/
+// @include http://ext.last.fm/1.0/*
 // @include http://post.audioscrobbler.com/*
 // @include http://post2.audioscrobbler.com/*
 // @include http://ws.audioscrobbler.com/*
@@ -42,7 +45,23 @@ var log_ = function(s) {
 
 var S = { fm: null };
 
+var fixStyles = function () {
+	var styleId = 'scrobblerStyleFix';
+	var styleBody = '.audioText { width: 300px !important; }';
+	
+	var style = document.getElementById(styleId);
+	if (style) return;
+	
+	style = document.createElement('style');
+	style.type = 'text/css';
+	style.id = styleId;
+	style.appendChild(document.createTextNode(styleBody));
+	document.body.appendChild(style);
+}
+
 var ScrobblerIcon = function(fm) {
+	fixStyles();
+	
 	this.scrobblerDiv = document.createElement('div');
 	this.scrobblerDiv.setAttribute('style', 'display: block; background-position: center center; background-repeat: no-repeat; width: 17px; height: 16px; border: 1px solid #aaa;');
 	this.scrobblerDiv.setAttribute('title', 'Вход не выполнен. Включите музыку, и начнется подключение.');
@@ -199,11 +218,13 @@ AdvancedControl.prototype = {
 		var t_ = this;
 		document.getElementById('lastfm_cancelBtn'+this.track_id).addEventListener('click',
 			function(ev) {
+				ev.stopPropagation();
 				t_.close(true);
 				t_.track.cancel();
 			}, false);
 		document.getElementById('lastfm_scrobbleBtn'+this.track_id).addEventListener('click',
 			function(ev) {
+				ev.stopPropagation();
 				t_.close(true);
 				t_.track.scrobble();
 			}, false);
@@ -256,6 +277,7 @@ var PlayingIcon = function(track, track_id) {
 	this.track = track;
 	this.track_id = track_id;
 	
+	fixStyles();
 	this.track.addObserver(this);
 }
 PlayingIcon.prototype = {
@@ -495,14 +517,14 @@ Track.prototype = {
 		this.playing = true;
 		
 		var t_ = this;
-		window.clearInterval(this.timer); // ensure
-		this.timer = window.setInterval(function() { t_.update(); }, this.updateInterval);
+		clearInterval(this.timer); // ensure
+		this.timer = setInterval(function() { t_.update(); }, this.updateInterval);
 		
 		this.runObserver('play');
 	},
 	
 	pause: function() {
-		window.clearInterval(this.timer);
+		clearInterval(this.timer);
 		this.playing = false;
 		
 		var now = Math.floor((new Date()).getTime() / 1000);
@@ -520,7 +542,7 @@ Track.prototype = {
 	},
 	
 	scrobble: function() {
-		window.clearInterval(this.timer);
+		clearInterval(this.timer);
 		this.noScrobble = true;
 		
 		var t_ = this;
@@ -531,7 +553,7 @@ Track.prototype = {
 	},
 	
 	cancel: function() {
-		window.clearInterval(this.timer);
+		clearInterval(this.timer);
 		this.noScrobble = true;
 		
 		this.runObserver('cancel');
@@ -539,7 +561,7 @@ Track.prototype = {
 	
 	stop: function() {
 		this.pause();
-		window.clearInterval(this.timer);
+		clearInterval(this.timer);
 		
 		this.runObserver('stop');
 	},
@@ -616,10 +638,32 @@ var scrobbler = {
 	
 };
 
-var hookVkontakte = function() {
-	var win = (typeof unsafeWindow != 'undefined') ? unsafeWindow : window;
-	if (typeof win.AudioObject == 'undefined') return; // not vkontakte.ru?
+var getWindow = function(doc) {
+	if (!doc)
+		doc = document;
+		
+	var win = doc.parentWindow;
+	if (win) return win;
 	
+	win = doc.defaultView;
+	if (win.unsafeWindow) {
+		win = win.unsafeWindow;
+	}
+	
+	if (navigator.userAgent.indexOf('WebKit') >= 0) {
+		var scriptElement = doc.createElement('script');
+		scriptElement.appendChild(doc.createTextNode('document.parentWindow=window'));
+		doc.documentElement.appendChild(scriptElement);
+		doc.documentElement.removeChild(scriptElement);
+		win = doc.parentWindow;
+	}
+	
+	return win;
+}
+
+var hookVkontakte = function() {
+	var win = getWindow(document);
+	if (typeof win.AudioObject == 'undefined') return; // not vkontakte.ru?
 	var oldHandler = win.AudioObject.stateChanged;
 	win.AudioObject.stateChanged = function(id, wall, state, message) {
 		var r = oldHandler.call(this, id, wall, state, message);
@@ -646,10 +690,20 @@ var hookVkontakte = function() {
 		return r;
 	}
 	
-	var oldPageHandler = win.getPageContent;
-	win.getPageContent = function(offset, inTop, afterFunc, obj) {
-		setTimeout(function(){scrobbler.stop();},0);
-		return oldPageHandler(offset, inTop, afterFunc, obj);
+	if (win.getPageContent) {
+		var oldPageHandler = win.getPageContent;
+		win.getPageContent = function(offset, inTop, afterFunc, obj) {
+			setTimeout(function(){scrobbler.stop();},0);
+			return oldPageHandler(offset, inTop, afterFunc, obj);
+		}
+	}
+	
+	if (win.updateResults) {
+		var oldUpdateResults = win.updateResults;
+		win.updateResults = function() {
+			setTimeout(function(){scrobbler.stop();},0);
+			return oldUpdateResults.apply(null, arguments);
+		}
 	}
 	
 	setTimeout(function() {
@@ -664,6 +718,7 @@ var hookVkontakte = function() {
 
 if (location.hostname == 'vkontakte.ru' && 
 	(location.pathname.indexOf('/audio') == 0 ||
+	location.pathname.indexOf('/gsearch.php') == 0 ||
 	location.pathname.indexOf('/id') == 0 ||
 	location.pathname.indexOf('/profile.php') == 0 ||
 	location.pathname.indexOf('/club') == 0)) {
@@ -1107,7 +1162,9 @@ var opera_conn = {
 	nowPlaying: function(cdata, track, successHandler, badSessionHandler, errorHandler) {
 		var req = Requester.request('', this.stub_url, '');
 		var reqWin = req.iframe.contentWindow;
-		reqWin.document.documentElement.innerHTML = '<html><head></head><body>'+
+		var reqDoc = reqWin.document;
+		reqDoc.open();
+		reqDoc.write('<html><body>'+
 			'<form action="'+cdata.npUrl+'" method="post" id="postForm">'+
 			'<input type="text" name="s" value="'+cdata.session+'"/>'+
 			'<input type="text" name="a" value="'+track.artist+'"/>'+
@@ -1116,7 +1173,8 @@ var opera_conn = {
 			'<input type="text" name="l" value="'+track.secs+'"/>'+
 			'<input type="text" name="n" value="'+track.trackn+'"/>'+
 			'<input type="text" name="m" value="'+track.mbid+'"/>'+
-			'</form></body></html>';
+			'</form></body></html>');
+		reqDoc.close();
 		var form = reqWin.document.getElementById('postForm');
 		form.submit();
 		
@@ -1138,7 +1196,9 @@ var opera_conn = {
 	scrobble: function(cdata, track, successHandler, badSessionHandler, failHandler, errorHandler) {
 		var req = Requester.request('', this.stub_url, '');
 		var reqWin = req.iframe.contentWindow;
-		reqWin.document.documentElement.innerHTML = '<html><head></head><body>'+
+		var reqDoc = reqWin.document;
+		reqDoc.open();
+		reqDoc.write('<html><head></head><body>'+
 			'<form action="'+cdata.scrUrl+'" method="post" id="postForm">'+
 			'<input type="text" name="s" value="'+cdata.session+'"/>'+
 			'<input type="text" name="a[0]" value="'+track.artist+'"/>'+
@@ -1150,7 +1210,8 @@ var opera_conn = {
 			'<input type="text" name="l[0]" value="'+track.secs+'"/>'+
 			'<input type="text" name="n[0]" value="'+track.trackn+'"/>'+
 			'<input type="text" name="m[0]" value="'+track.mbid+'"/>'+
-			'</form></body></html>';
+			'</form></body></html>');
+		reqDoc.close();
 		var form = reqWin.document.getElementById('postForm');
 		form.submit();
 		
@@ -1219,7 +1280,9 @@ var empty_conn = {
 };
 
 S.fm.conn = (typeof GM_xmlhttpRequest != 'undefined') ? ff_conn : opera_conn;
-
+if (navigator.userAgent.indexOf('WebKit') >= 0) { // chrome has GM_xmlhttpRequest but prohibits cross-domain
+	S.fm.conn = opera_conn;
+}
 
 //////////////////////////////////////////////////////////
 //              Opera support functions                 //
@@ -1259,7 +1322,9 @@ var createRequestObject = function() {
 	return null;
 }
 var getToken = function() {
+	log_('getToken');
 	var loginTime = Requester.getArguments();
+	log_(loginTime);
 	if (loginTime == false) return; // we are not the handler
 	loginTime = loginTime[0];
 	log_('Getting token. Login time: '+loginTime);
@@ -1428,7 +1493,8 @@ Requester = {
 		var deferred = new Deferred();
 		deferred.iframe = iframe;
 		deferred.req_id = req_id;
-		window[req_id] = deferred;
+		var win = getWindow();
+		win[req_id] = deferred;
 		
 		setTimeout(function() { 
 			if (!deferred.fired()) {
@@ -1446,7 +1512,7 @@ Requester = {
 	 */
 	/* private */ disposeFrame: function() {
 		this.iframe.parentNode.removeChild(this.iframe);
-		delete(window[this.req_id]);
+		delete(getWindow()[this.req_id]);
 	},
 	
 	/**
@@ -1495,12 +1561,13 @@ Requester = {
 		var req_id = args[1];
 		var data = args[3];
 		
-		if (!window.parent[req_id]) {	
+		var win = getWindow(document);
+		if (!win.parent[req_id]) {	
 			log_("Requester: Deferred object disappeared.");
 			return;
 		}
-		deferred = window.parent[req_id];
-		window.parent.setTimeout(function() { // run in parent window thread
+		deferred = win.parent[req_id];
+		win.parent.setTimeout(function() { // run in parent window thread
 			deferred.callback(unserializeData(data));
 		}, 0);
 	},
