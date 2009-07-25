@@ -3,7 +3,7 @@
 // Compatible with Opera and Firefox. Maybe Safari/Chrome in future.
 // Tested with Opera 9.5, Opera 10, Firefox3 (GM 0.8).
 //
-// alpha 5 (2009-03-19)
+// alpha 6 (2009-03-28)
 //
 // More info at http://nichtverstehen.de/vkontakte-scrobbler
 //
@@ -114,7 +114,7 @@ ScrobblerIcon.prototype = {
 	scrobblerAnonymous: function() {
 		this.showLink(true, 'залогиньтесь', 'http://www.last.fm/login');
 		this.scrobblerDiv.className = 'vkontakte_scrobbler_anonymous';
-		this.scrobblerDiv.setAttribute('title', 'Вы не вошли на Last.fm. \nКликните здесь и залогиньтесь.');
+		this.scrobblerDiv.setAttribute('title', 'Вы не вошли на Last.fm. \nЗалогиньтесь, а затем кликните здесь, чтоб повторить подключение.');
 		this.scrobblerDiv.style.backgroundColor = '#f4f77c';
 		this.scrobblerDiv.style.backgroundImage = 'url("'+this.anonIcon+'")';
 		this.scrobblerDiv.style.borderColor = '#f7df6d';
@@ -123,7 +123,7 @@ ScrobblerIcon.prototype = {
 		if (!text) text = '';
 		this.showLink(false);
 		this.scrobblerDiv.className = 'vkontakte_scrobbler_error';
-		this.scrobblerDiv.setAttribute('title', 'Ошибка '+text+'. \n Тыкни, чтоб попробовать снова.');
+		this.scrobblerDiv.setAttribute('title', 'Ошибка '+text+'. \n Кликните, чтоб попробовать подключиться снова.');
 		this.scrobblerDiv.style.backgroundImage = 'url("'+this.xIcon+'")';
 		this.scrobblerDiv.style.backgroundColor = '#faa';
 		this.scrobblerDiv.style.borderColor = '#f88';
@@ -139,7 +139,7 @@ ScrobblerIcon.prototype = {
 	scrobblerReady: function(t, username) {
 		this.showLink(true, S.fm.username, 'http://www.last.fm/user/'+S.fm.username);
 		this.scrobblerDiv.className = 'vkontakte_scrobbler_ready';
-		this.scrobblerDiv.setAttribute('title', 'Скробблер готов. Тыкни, и отключится.');
+		this.scrobblerDiv.setAttribute('title', 'Скробблер готов. Кликните, и отключится.');
 		this.scrobblerDiv.style.backgroundImage = 'url("'+this.lfmIcon+'")';
 		this.scrobblerDiv.style.backgroundColor = '#517EA6';
 		this.scrobblerDiv.style.borderColor = '#205B7F';
@@ -148,7 +148,7 @@ ScrobblerIcon.prototype = {
 	scrobblerDisabled: function(t, username) {
 		this.showLink(true, S.fm.username, 'http://www.last.fm/user/'+S.fm.username);
 		this.scrobblerDiv.className = 'vkontakte_scrobbler_disabled';
-		this.scrobblerDiv.setAttribute('title', 'Скробблер выключен. Тыкни, и включится');
+		this.scrobblerDiv.setAttribute('title', 'Скробблер выключен. Кликните, и включится');
 		this.scrobblerDiv.style.backgroundImage = 'url("'+this.lfmIcon+'")';
 		this.scrobblerDiv.style.backgroundColor = '#bbb';
 		this.scrobblerDiv.style.borderColor = '#aaa';
@@ -371,12 +371,12 @@ PlayingIcon.prototype = {
 		e.setAttribute('title', 'Трек отправлен');
 	},
 	
-	failScrobble: function() {
+	failScrobble: function(self, text) {
 		var e = this.createScrobbleStatus();
 		if (!e) return;
 		
 		e.style.backgroundImage = 'url("'+this.scrobbleFailIcon+'")';
-		e.setAttribute('title', 'Ошибка при отправке трека. Кликните, чтоб повторить.');
+		e.setAttribute('title', 'Ошибка при отправке трека: '+text+'. Кликните, чтоб повторить.');
 		e.style.cursor = 'hand';
 		var t_ = this;
 		e.addEventListener('click', function(ev) { 
@@ -524,7 +524,7 @@ Track.prototype = {
 		
 		var t_ = this;
 		S.fm.scrobble(this, function () { t_.successScrobble(); }, 
-			function (msg) { t_.failScrobble(); }, function() { t_.failScrobble(); });
+			function (msg) { t_.failScrobble(msg); }, function() { t_.failScrobble('error'); });
 		
 		this.runObserver('scrobble');
 	},
@@ -616,14 +616,11 @@ var scrobbler = {
 };
 
 var hookVkontakte = function() {
-	log_('Vkontakte part started');
-	
 	var win = (typeof unsafeWindow != 'undefined') ? unsafeWindow : window;
 	if (typeof win.AudioObject == 'undefined') return; // not vkontakte.ru?
 	
 	var oldHandler = win.AudioObject.stateChanged;
 	win.AudioObject.stateChanged = function(id, wall, state, message) {
-		//log_("stateChanged(id="+id+", wall="+wall+", state="+state+", message="+message+")");
 		var r = oldHandler.call(this, id, wall, state, message);
 		if (wall) id = 'Wall'+id;
 		
@@ -710,7 +707,7 @@ S.fm = {
 	login:  function(fn, fail) {
 		if (this.bad) {
 			if (fail) fail();
-			return; //TODO: maybe report
+			return; 
 		}
 		if (this.state == 1) {
 			if (fail) fail();
@@ -746,15 +743,15 @@ S.fm = {
 		this.login(fn); 
 	},
 	
-	handleLoginFail: function(fn) {
+	handleLoginFail: function(text) {
 		this.state = 0;
-		this.runObserver('scrobblerLoginError');
+		this.runObserver('scrobblerLoginError', text);
 	},
 	
 	handleLoginError: function(text) {
 		this.state = 0;
 		this.bad = true;
-		this.runObserver('scrobblerLoginError');
+		this.runObserver('scrobblerLoginError', text);
 	},
 	
 	anonymous: function() {
@@ -889,15 +886,18 @@ var ff_conn = {
 		
 		var cancel = false; var timeout = 0;
 		
-		var gotError = function(responseDetails) {
-			if (failHandler) failHandler('httpLoginError '+responseDetails.status);
+		var gotError = function(status) {
+			if (failHandler) failHandler('httpLoginError ('+status+')');
+		};
+		var gotHttpError = function(responseDetails) {
+			gotError(responseDetails.status);
 		};
 		var gotSessionResult = function(responseDetails) {
 			if (cancel) return; clearTimeout(timeout); // timeout
 			var result = responseDetails.responseText.split('\n');
 			var status = result[0];//.trim()
 			if (status == 'BANNED' || status == 'BADAUTH') {
-				errorHandler();
+				if (errorHandler) errorHandler(status);
 				return;
 			}
 			if (status == 'BADTIME') {
@@ -922,7 +922,7 @@ var ff_conn = {
 			
 			GM_xmlhttpRequest({ method: 'GET', url: 'http://post.audioscrobbler.com/?hs=true&p=1.2.1'+
 				'&c='+cdata.clientName+'&v='+cdata.clientVer+'&u='+username+'&t='+loginTime+'&a='+token, 
-				onload: gotSessionResult, onerror: gotError});
+				onload: gotSessionResult, onerror: gotHttpError});
 		};
 		var gotLogin = function(responseDetails) {
 			if (cancel) return; // timeout cancelled request
@@ -939,16 +939,16 @@ var ff_conn = {
 			GM_xmlhttpRequest({method: 'POST', url: 'http://ext.last.fm/1.0/webclient/xmlrpc.php',
 				data: '<methodCall><methodName>getScrobbleAuth</methodName><params><param><value><string>'+username+'</string>'+
 					'</value></param><param><value><string>'+loginTime+'</string></value></param></params></methodCall>',
-				onload: gotToken, onerror: gotError});
+				onload: gotToken, onerror: gotHttpError});
 		};
 		GM_xmlhttpRequest({ method: 'POST', url: 'http://ext.last.fm/1.0/webclient/xmlrpc.php',
 			data: '<methodCall><methodName>getSession</methodName><params /></methodCall>',
-			onload: gotLogin, onerror: gotError});
+			onload: gotLogin, onerror: gotHttpError});
 			
 		// user defined timeout. See bug http://greasemonkey.devjavu.com/ticket/100
 		timeout = setTimeout(function() {
 			cancel = true;
-			gotError({status: 'timeout'});
+			gotError('timeout');
 		}, 25000);
 	},
 	
@@ -1050,15 +1050,12 @@ var opera_conn = {
 	login: function(cdata, successHandler, anonymousHandler, failHandler, errorHandler) {
 		var t_ = this; // add to closure
 		var gotError = function(status) {
-			log_('Conn: Error getting token. Code '+status);
-			errorHandler(status);
+			if (status == -1) status = 'Timeout';
+			failHandler(status);
 		};
 		
 		var loginTime = Math.floor((new Date()).getTime() / 1000);
-		var tokenReq = Requester.request('http://ext.last.fm/1.0/#getToken', this.stub_url, loginTime, 20000);
-		tokenReq.addErrback(function(errno) {
-			gotError(errno);
-		});
+		var tokenReq = Requester.request('http://ext.last.fm/1.0/#getToken', this.stub_url, [loginTime], 20000);
 		
 		var gotSessionResult = function(username, result) {
 			var status = result[0];//.trim()
@@ -1084,6 +1081,10 @@ var opera_conn = {
 				anonymousHandler();
 				return;
 			}
+			if (username == 'ERROR') {
+				gotError(result[1]);
+				return;
+			}
 			
 			var token = result[1];
 			log_('Conn: Got username '+username+' token '+token);
@@ -1093,8 +1094,7 @@ var opera_conn = {
 				gotSessionResult(username, result);
 			});
 			sessionReq.addErrback(function(errno) {
-				log_('Conn: Error getting sessid. Code '+errno);
-				gotError();
+				gotError(errno);
 			});
 		});
 		tokenReq.addErrback(function(code) {
@@ -1224,18 +1224,22 @@ S.fm.conn = (typeof GM_xmlhttpRequest != 'undefined') ? ff_conn : opera_conn;
 //              Opera support functions                 //
 //////////////////////////////////////////////////////////
 var postAudioscrobbler = function() {
+	if (Requester.getArguments() === false) return;
+	
 	log_('Returning post.audioscrobbler.com data: '+document.documentElement.innerText);
 	var r = document.documentElement.innerText.split('\n');
-	Requester.returnData(true, r, opera_conn.stub_url);
+	Requester.returnData(r);
 }
 if (location.hostname == 'post.audioscrobbler.com' || location.hostname == 'post2.audioscrobbler.com') {// && location.pathname == '/np_1.2')
 	setTimeout(postAudioscrobbler, 0);
 }
 
 var wsAudioscrobbler = function() {
+	if (Requester.getArguments() === false) return;
+	
 	log_('Returning ws.audioscrobbler.com data: '+document.documentElement.innerText);
 	var r = document.documentElement.innerText.substr(1).replace(/;/g,'');
-	Requester.returnData(true, r, opera_conn.stub_url);
+	Requester.returnData(r);
 }
 if (location.hostname == 'ws.audioscrobbler.com') {
 	setTimeout(wsAudioscrobbler, 0);
@@ -1255,24 +1259,25 @@ var createRequestObject = function() {
 }
 var getToken = function() {
 	var loginTime = Requester.getArguments();
+	if (loginTime == false) return; // we are not the handler
+	loginTime = loginTime[0];
 	log_('Getting token. Login time: '+loginTime);
 	var req = createRequestObject();
 	req.open('POST', 'http://ext.last.fm/1.0/webclient/xmlrpc.php', true);
 	var gotError = function(code) {
-		log_('Request for token failed. Code: '+code);
-		Requester.returnData(false, code, opera_conn.stub_url);
+		Requester.returnData(['ERROR', 'Token request failed ('+code+')']);
 	};
 	var gotToken = function(username) {
-		if (req.responseXML.getElementsByTagName('string').length < 1) { gotError(1); return; }
+		if (req.responseXML.getElementsByTagName('string').length < 1) { gotError(2); return; }
 		var token = req.responseXML.getElementsByTagName('string').item(0).firstChild.textContent;
-		Requester.returnData(true, [username,token], opera_conn.stub_url);
+		Requester.returnData([username,token]);
 	};
 	var gotLogin = function() {
 		if (req.responseXML.getElementsByTagName('string').length < 1) { gotError(1); return; }
 		var username = req.responseXML.getElementsByTagName('string').item(0).firstChild.textContent;
 		log_('Found username: '+username);
 		if (username == 'LFM_ANON') {
-			Requester.returnData(true, [username], opera_conn.stub_url);
+			Requester.returnData([username]);
 			return;
 		}
 		
@@ -1296,7 +1301,6 @@ var getToken = function() {
 	};
 	req.send('<methodCall><methodName>getSession</methodName><params /></methodCall>');
 }
-
 if (location.href == 'http://ext.last.fm/1.0/#getToken') {
 	setTimeout(getToken, 0);
 }
@@ -1326,7 +1330,7 @@ Deferred.prototype = {
 		this.broadcast_();
 		return true;
 	},
-	hasResult: function() {
+	fired: function() {
 		return this.fired_;
 	},
 	addCallback: function(fn) {
@@ -1353,124 +1357,155 @@ Deferred.prototype = {
 };
 
 /* ============ REQUESTER OBJECT ===========
-   Incapsulates cross-domain http async requests in userjs
-   To make request call Requester.request. Pass data as array.
-      It creates an iframe from passed url
-   Then the script at that url must aquire its arguments throw Requester.getData()
-      and return an array via Requester.returnData() passing a stub url.
-   Script running at stub url should just call Requester.runStub().
-   
+   Incapsulates cross-domain http async requests in userjs.
    The data is passed through window.name varible. */
-Requester = {
-	de_objects_: {},
-	default_timeout: 15000,
-	
-	getDeferred: function(i) {
-		if (!(i in this.de_objects_)) return null;
-		return this.de_objects_[i];
-	},
-	
-	serializeArray: function(a) {
-		if (!(a instanceof Array)) a = [a];
-		var r = '[ ';
-		for(var i = 0; i < a.length; ++i) {
-			r += '\'' + a[i].toString().replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/'/g, "\\'") + '\', ';
-		}
-		return (r += ']');
-	},
-	unserializeArray: function(s) {
-		return eval(s); // Mind security!
-	},
-	
-	explode: function(s, delim, n) {
-		var p = 0;
-		var g = [];
-		for(var i = 0; n == undefined || i < n-1; ++i) {
-			var index = s.indexOf(delim, p);
-			if (index == -1) break;
-			g[i] = s.slice(p, index);
-			p = index+1;
-		}
-		if (n != undefined || i < n-1) {
-			g[i] = s.slice(p);
-		}
-		return g;
-	},
+  
+var serializeData = function(a) {
+	if (!(a instanceof Array)) a = [a];
+	var r = '[ ';
+	for(var i = 0; i < a.length; ++i) {
+		r += "'" + a[i].toString().replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/'/g, "\\'") + "', ";
+	}
+	return (r += ']');
+}
+var unserializeData = function(s) {
+	return eval(s); // Mind security!
+}
 
+var explode = function(s, delim, n) {
+	var p = 0;
+	var g = [];
+	for(var i = 0; n == undefined || i < n-1; ++i) {
+		var index = s.indexOf(delim, p);
+		if (index == -1) break;
+		g[i] = s.slice(p, index);
+		p = index+1;
+	}
+	if (n != undefined || i < n-1) {
+		g[i] = s.slice(p);
+	}
+	return g;
+}
+	
+/**
+ * Cross domain requests from Opera UserJS. Singleton.
+ * A  user-js handler at requested page must exist to prepare and return data to requesting page.
+ *
+ * Usage: let A is requesting page. B is a page at the remote domain to request from,
+ * A.domain, B.domain are the domains of A and B.
+ * Create a UserJS at A calling Requester.request, passing to B, and url of a page at A.domain.
+ * The latter page is called a stub and is used to exchange data with original requesting window.
+ * It must be an arbitrary page at original domain, better small-sized.
+ * Then create a UserJS handler for B. Get passed arguments by calling Requester.getArguments(),
+ * make proper preparations and requests (e.g. XMLHttpRequests to B.domain webservice), and return
+ * resulting array by calling Requester.returnData().
+ */
+Requester = {
+	default_timeout: 15000,
+	token: 'XDR1',
+
+	/**
+	 * Make cross-domain request.
+	 *
+	 * @param request_url URL to load
+	 * @param stub_url any URL at requesting domain used to exchange data with original Requester
+	 * @param data an array of strings to pass to handler script at 'request_url'
+	 * @param timeout generate timeout error after 'timeout' msec
+	 * @return deferred object receiving events
+	 */
 	request: function (request_url, stub_url, data, timeout)
 	{
 		if (timeout == undefined) timeout = this.default_timeout;
-		
-		deferred = new Deferred();
-		var req_id = (new Date()).getTime();
-		this.de_objects_[req_id] = deferred;
+		var req_id = 'request'+(new Date()).getTime();
 		
 		var iframe = document.createElement('iframe');
+		document.body.appendChild(iframe);
+		iframe.setAttribute('src', request_url);
+		iframe.setAttribute('style', 'display: none;');
+		iframe.contentWindow.name = this.token + '#' + req_id + '#' + stub_url + '#' + serializeData(data);
+		
+		var deferred = new Deferred();
 		deferred.iframe = iframe;
 		deferred.req_id = req_id;
-		var body = document.getElementsByTagName('body').item(0);
-		if (!body) return null;
-		body.appendChild(iframe);
+		window[req_id] = deferred;
 		
-		iframe.contentWindow.name = req_id + '#' + this.serializeArray(data);
-		
-		iframe.setAttribute('src', request_url);
-		iframe.setAttribute('style', 'width: 1px; height:1px; left: 100px; top: 100px; position: absolute; visibility: hidden;');// 
-		
-		window.setTimeout(function() {
-			if (req_id in Requester.de_objects_)  {
-				de = Requester.de_objects_[req_id];
-				if (!de.hasResult()) {
-					de.errback(-1);
-				}
+		setTimeout(function() { 
+			if (!deferred.fired()) {
+				deferred.errback(-1);
 			}
 		}, timeout);
-		
 		deferred.addCallback(this.disposeFrame);
 		deferred.addErrback(this.disposeFrame);
 		
 		return deferred;
 	},
 	
-	disposeFrame: function() {
-		//this.iframe.parentNode.removeChild(this.iframe);
-		delete(Requester.de_objects_[this.req_id]);
+	/**
+	 * Get rid of a deferred object and frame having been used. Used internally
+	 */
+	/* private */ disposeFrame: function() {
+		this.iframe.parentNode.removeChild(this.iframe);
+		delete(window[this.req_id]);
 	},
 	
-	runStub: function() {
-		var args = this.explode(window.name, '#', 3);
-		window.name = '';
-		
-		var de_index = args[0];
-		var status = args[1]=='1';
-		var data = args[2];
-		
-		if (!window.parent.Requester) {	
-			log_("Requester: Invalid parent window.");
-			return;
-		}
-		deferred = window.parent.Requester.getDeferred(de_index);
-		if (!deferred) {
-			log_("Requester: Deferred object disappeared.");
-			return;
-		}
-		deferred.fire(status, this.unserializeArray(data));
+	/**
+	 * UserJS handler at requested url calls it to get the array of data passed by requesting script.
+	 *
+	 * @see Requester#request
+	 * @returns array of data, or false if nothing requested by this requester
+	 */
+	getArguments: function() {
+		var args = explode(window.name, '#', 4);
+		if (args[0] != this.token)
+			return false;
+		return unserializeData(args[3]);
 	},
 	
-	returnData: function(status, data, stub_url) {
-		var args = this.explode(window.name, '#', 2);
-		window.name = args[0] + '#' + (status?1:0) + '#' + this.serializeArray(data);
+	/**
+	 * Pass an array of data to requesting page as a result.
+	 * Deferred callback will be called with this array as an argument.
+	 */
+	returnData: function(data) {
+		var args = explode(window.name, '#', 4);
+		var req_id = args[1];
+		var stub_url = args[2];
+		window.name = this.token + '#' + req_id + '#' + stub_url + '#' + serializeData(data);
 		location.replace(stub_url);
 	},
 	
-	getArguments: function() {
-		var args = this.explode(window.name, '#', 2);
-		return this.unserializeArray(args[1]);
-	}
+	/**
+	 * Check if we are in stub.
+	 *
+	 * @return true if location.href is the stub page. False otherwise.
+	 */
+	inStub: function() {
+		var args = explode(window.name, '#', 4);
+		var token = args[0];
+		var stub_url = args[2];
+		return token == this.token && location.href == stub_url;
+	},
+	
+	/**
+	 * Pass the collected result to original requesting page.
+	 */
+	runStub: function() {
+		var args = explode(window.name, '#', 4);
+		window.name = '';	
+		var req_id = args[1];
+		var data = args[3];
+		
+		if (!window.parent[req_id]) {	
+			log_("Requester: Deferred object disappeared.");
+			return;
+		}
+		deferred = window.parent[req_id];
+		window.parent.setTimeout(function() { // run in parent window thread
+			deferred.callback(unserializeData(data));
+		}, 0);
+	},
 };
-if (location.href == opera_conn.stub_url)
+if (Requester.inStub())
 {
-	// in stub
 	Requester.runStub();
 }
 
