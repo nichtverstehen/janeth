@@ -1,11 +1,10 @@
-// Janeth
-//
-// Greasemonkey/UserJS script to scrobble vkontakte tracks plays.
+﻿// Janeth
+// User script to scrobble online track plays at vkontakte.ru.
 // Compatible with Opera, Firefox and Chrome. 
 // Safari/IE may be implemented in future.
-// Tested with Opera 9.5, Opera 10, Firefox3 (GM 0.8), Chrome 2.0.172.28.
+// Tested with Opera 9.5, Opera 10, Firefox3 (GM 0.8), Chrome 2.0&3.0
 //
-// beta 3 (2009-05-26)
+// beta 4 (2009-06-27)
 //
 // More info at http://nichtverstehen.de/vkontakte-scrobbler
 //
@@ -15,7 +14,7 @@
 // ==UserScript==
 // @name          Janeth vkontakte-scrobbler
 // @namespace     http://nichtverstehen.de/vkontakte-scrobbler
-// @version       0.3
+// @version       0.4
 // @description   scrobble vkontakte audiotrack plays
 //
 // @copyright 2009, Cyril Nikolaev (http://nichtverstehen.de)
@@ -35,6 +34,11 @@
 // ==/UserScript==
 
 (function() { /*  begin private namespace */
+
+var JANETH_VERSION = "Janeth бета 4 (2009-06-27)\n\n"+
+	"Юзер-скрипт для скробблинга прослушанных аудизаписей на vkontakte.ru.\n\n"+
+	"Документация есть на сайте http://nichtverstehen.de/vkontakte-scrobbler/\n"+
+	"Автор — Кирилл Николаев <cyril7@gmail.com>";
 
 var log_ = function(s) {
 	if (window.opera)
@@ -75,7 +79,10 @@ var ScrobblerIcon = function(fm) {
 	this.link.setAttribute('style', 'display: none; line-height: 18px; margin-right: 8px;');
 	
 	var clickHandler = function(e) {
-		if (e.target.className == 'vkontakte_scrobbler_error' || e.target.className == 'vkontakte_scrobbler_anonymous') {
+		if (e.target.className == 'vkontakte_scrobbler_inactive') {
+			alert(JANETH_VERSION);
+		}
+		else if (e.target.className == 'vkontakte_scrobbler_error' || e.target.className == 'vkontakte_scrobbler_anonymous') {
 			S.fm.login();
 		} 
 		else if (e.target.className == 'vkontakte_scrobbler_ready' ) {
@@ -641,24 +648,25 @@ var scrobbler = {
 var getWindow = function(doc) {
 	if (!doc)
 		doc = document;
-	
-	if (typeof unsafeWindow != 'undefined') {
-		return unsafeWindow;
-	}
-	if (doc.parentWindow) {
-		return doc.parentWindow;
-	}
-	
-	var win = doc.defaultView;
+
 	if (navigator.userAgent.indexOf('WebKit') >= 0) {
+		var win = doc.defaultView;
 		var scriptElement = doc.createElement('script');
 		scriptElement.appendChild(doc.createTextNode('document.parentWindow=window'));
 		doc.documentElement.appendChild(scriptElement);
 		doc.documentElement.removeChild(scriptElement);
 		win = doc.parentWindow;
+
+		return win;
 	}
 	
-	return win;
+	if (typeof unsafeWindow != 'undefined') {
+		return unsafeWindow;
+	}
+
+	if (doc.parentWindow) {
+		return doc.parentWindow;
+	}
 }
 
 var hookVkontakte = function() {
@@ -1165,7 +1173,7 @@ var opera_conn = {
 		var reqDoc = reqWin.document;
 		reqDoc.open();
 		reqDoc.write('<html><body>'+
-			'<form action="'+cdata.npUrl+'" method="post" id="postForm">'+
+			'<form action="'+cdata.npUrl+'" method="post" id="postForm" accept-charset="utf-8">'+
 			'<input type="text" name="s" value="'+cdata.session+'"/>'+
 			'<input type="text" name="a" value="'+track.artist+'"/>'+
 			'<input type="text" name="t" value="'+track.title+'"/>'+
@@ -1199,7 +1207,7 @@ var opera_conn = {
 		var reqDoc = reqWin.document;
 		reqDoc.open();
 		reqDoc.write('<html><head></head><body>'+
-			'<form action="'+cdata.scrUrl+'" method="post" id="postForm">'+
+			'<form action="'+cdata.scrUrl+'" method="post" id="postForm" accept-charset="utf-8">'+
 			'<input type="text" name="s" value="'+cdata.session+'"/>'+
 			'<input type="text" name="a[0]" value="'+track.artist+'"/>'+
 			'<input type="text" name="t[0]" value="'+track.title+'"/>'+
