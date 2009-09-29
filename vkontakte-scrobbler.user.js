@@ -1,10 +1,10 @@
 ﻿// Janeth
-// User script to scrobble online track plays at vkontakte.ru.
+// User script to scrobble online track plays at vkontakte.ru (vk.com).
 // Compatible with Opera, Firefox and Chrome. 
 // Safari/IE may be implemented in future.
-// Tested with Opera 9.5, Opera 10, Firefox3 (GM 0.8), Chrome 2.0&3.0
+// Tested with Opera 9.5, Opera 10, Firefox3 (GM 0.8)
 //
-// beta 4 (2009-06-27)
+// beta 5 (2009-09-29)
 //
 // More info at http://nichtverstehen.de/vkontakte-scrobbler
 //
@@ -14,7 +14,7 @@
 // ==UserScript==
 // @name          Janeth vkontakte-scrobbler
 // @namespace     http://nichtverstehen.de/vkontakte-scrobbler
-// @version       0.4
+// @version       0.5
 // @description   scrobble vkontakte audiotrack plays
 //
 // @copyright 2009, Cyril Nikolaev (http://nichtverstehen.de)
@@ -25,8 +25,14 @@
 // @include http://vkontakte.ru/club*
 // @include http://vkontakte.ru/profile.php*
 // @include http://vkontakte.ru/gsearch.php*
+// @include http://vk.com/audio*
+// @include http://vk.com/id*
+// @include http://vk.com/club*
+// @include http://vk.com/profile.php*
+// @include http://vk.com/gsearch.php*
 //
 // @include http://vkontakte.ru/images/qmark.gif
+// @include http://vk.com/images/qmark.gif
 // @include http://ext.last.fm/1.0/*
 // @include http://post.audioscrobbler.com/*
 // @include http://post2.audioscrobbler.com/*
@@ -35,7 +41,7 @@
 
 (function() { /*  begin private namespace */
 
-var JANETH_VERSION = "Janeth бета 4 (2009-06-27)\n\n"+
+var JANETH_VERSION = "Janeth бета 5 (2009-09-29)\n\n"+
 	"Юзер-скрипт для скробблинга прослушанных аудизаписей на vkontakte.ru.\n\n"+
 	"Документация есть на сайте http://nichtverstehen.de/vkontakte-scrobbler/\n"+
 	"Автор — Кирилл Николаев <cyril7@gmail.com>";
@@ -724,7 +730,7 @@ var hookVkontakte = function() {
 	},0);
 }
 
-if (location.hostname == 'vkontakte.ru' && 
+if ((location.hostname == 'vkontakte.ru' || location.hostname == 'vk.com') && 
 	(location.pathname.indexOf('/audio') == 0 ||
 	location.pathname.indexOf('/gsearch.php') == 0 ||
 	location.pathname.indexOf('/id') == 0 ||
@@ -1108,7 +1114,7 @@ var ff_conn = {
 	
 //  Vkontakte-opera-connection  (browser-specific)
 var opera_conn = {
-	stub_url: 'http://vkontakte.ru/images/qmark.gif',
+	stub_url: 'http://' + location.hostname + '/images/qmark.gif',
 	
 	/* successHandler(username, session, np_url, scr_url), anonymousHandler(), failHandler(message), errorHandler(message) */
 	login: function(cdata, successHandler, anonymousHandler, failHandler, errorHandler) {
