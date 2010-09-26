@@ -13,10 +13,10 @@
 // ==UserScript==
 // @name          Janeth vkontakte-scrobbler
 // @namespace     http://nichtverstehen.de/vkontakte-scrobbler
-// @version       0.6
+// @version       0.7
 // @description   scrobble vkontakte audiotrack plays
 //
-// @copyright 2009, Cyril Nikolaev (http://nichtverstehen.de)
+// @copyright 2010, Cyril Nikolaev (http://nichtverstehen.de)
 // @licence LGPL
 //
 // @include http://vkontakte.ru/*
