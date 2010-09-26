@@ -1,10 +1,9 @@
 ﻿// Janeth
 // User script to scrobble online track plays at vkontakte.ru (vk.com).
-// Compatible with Opera, Firefox and Chrome. 
-// Safari/IE may be implemented in future.
+// Compatible with Opera, Firefox. 
 // Tested with Opera 9.5, Opera 10, Firefox3 (GM 0.8)
 //
-// beta 5 (2009-09-29)
+// beta 6 (2010-09-27)
 //
 // More info at http://nichtverstehen.de/vkontakte-scrobbler
 //
@@ -14,22 +13,14 @@
 // ==UserScript==
 // @name          Janeth vkontakte-scrobbler
 // @namespace     http://nichtverstehen.de/vkontakte-scrobbler
-// @version       0.5
+// @version       0.6
 // @description   scrobble vkontakte audiotrack plays
 //
 // @copyright 2009, Cyril Nikolaev (http://nichtverstehen.de)
 // @licence LGPL
 //
-// @include http://vkontakte.ru/audio*
-// @include http://vkontakte.ru/id*
-// @include http://vkontakte.ru/club*
-// @include http://vkontakte.ru/profile.php*
-// @include http://vkontakte.ru/gsearch.php*
-// @include http://vk.com/audio*
-// @include http://vk.com/id*
-// @include http://vk.com/club*
-// @include http://vk.com/profile.php*
-// @include http://vk.com/gsearch.php*
+// @include http://vkontakte.ru/*
+// @include http://vk.com/*
 //
 // @include http://vkontakte.ru/images/qmark.gif
 // @include http://vk.com/images/qmark.gif
@@ -39,9 +30,10 @@
 // @include http://ws.audioscrobbler.com/*
 // ==/UserScript==
 
+
 (function() { /*  begin private namespace */
 
-var JANETH_VERSION = "Janeth бета 5 (2009-09-29)\n\n"+
+var JANETH_VERSION = "Janeth бета 6 (2010-09-27)\n\n"+
 	"Юзер-скрипт для скробблинга прослушанных аудизаписей на vkontakte.ru.\n\n"+
 	"Документация есть на сайте http://nichtverstehen.de/vkontakte-scrobbler/\n"+
 	"Автор — Кирилл Николаев <cyril7@gmail.com>";
@@ -57,7 +49,7 @@ var S = { fm: null };
 
 var fixStyles = function () {
 	var styleId = 'scrobblerStyleFix';
-	var styleBody = '.audioText { width: 300px !important; }';
+	var styleBody = '.audioTitle { width: 300px !important; } \n#pagesTop .pageList { padding-left: 10px; }';
 	
 	var style = document.getElementById(styleId);
 	if (style) return;
@@ -100,7 +92,7 @@ var ScrobblerIcon = function(fm) {
 	};
 	this.scrobblerDiv.addEventListener('click', clickHandler, false);
 	
-	if (location.pathname.indexOf('/audio.php') == 0 || location.pathname.indexOf('/audiosearch.php') == 0) {
+	if (location.pathname.indexOf('/audio.php') == 0 || location.pathname.indexOf('/gsearch.php') == 0) {
 		if (this.scrobblerDiv.style.styleFloat == undefined) {
 			this.scrobblerDiv.style.cssFloat = 'right';
 			this.link.style.cssFloat = 'right';
@@ -112,9 +104,9 @@ var ScrobblerIcon = function(fm) {
 	if (location.pathname.indexOf('/audio.php') == 0) {
 		document.getElementById('bigSummary').appendChild(this.scrobblerDiv);
 		document.getElementById('bigSummary').appendChild(this.link);
-	} else if (location.pathname.indexOf('/audiosearch.php') == 0) {
-		document.getElementById('audioSearch').appendChild(this.scrobblerDiv);
-		document.getElementById('audioSearch').appendChild(this.link);
+	} else if (location.pathname.indexOf('/gsearch.php') == 0) {
+		document.getElementById('searchSummary').parentNode.appendChild(this.scrobblerDiv);
+		document.getElementById('searchSummary').parentNode.appendChild(this.link);
 	} else {
 		this.scrobblerDiv.style.display = 'inline-block';
 		if (this.scrobblerDiv.style.styleFloat == undefined) this.scrobblerDiv.style.cssFloat = 'left';
@@ -428,11 +420,11 @@ var InfoPanel = function(track, id) {
 	
 	var infoDiv = document.getElementById('lastfm_trackInfo')
 	if (!infoDiv) {
-		var p = document.getElementById('searchAudio');
+		var p = document.getElementById('quickquery').parentNode.parentNode;
 		if (!p) return;
 		infoDiv = p.parentNode.appendChild(document.createElement('div'));
 		infoDiv.id = 'lastfm_trackInfo';
-		infoDiv.setAttribute('style', 'background: #eee; display: none; padding: 10px; margin-top: 1em; position: fixed; width: 156px;');
+		infoDiv.setAttribute('style', 'background: #eee; display: none; padding: 10px; margin-top: 1em; position: static; width: 156px; margin: 0 -10px;');
 	}
 	
 	track.addObserver(this);
@@ -446,9 +438,10 @@ InfoPanel.prototype = {
 	},
 	updateInfo: function() {
 		var infoDiv = document.getElementById('lastfm_trackInfo');
-		if (infoDiv) infoDiv.style.display = 'block';
+		if (!infoDiv) return;
+		infoDiv.style.display = 'block';
 		
-		info = this.info;
+		var info = this.info;
 
 		var albumart = '';
 		if (info.album != undefined && info.album.image != undefined)  {
@@ -678,46 +671,69 @@ var getWindow = function(doc) {
 var hookVkontakte = function() {
 	var win = getWindow(document);
 	if (typeof win.AudioObject == 'undefined') return; // not vkontakte.ru?
-	var oldHandler = win.AudioObject.stateChanged;
-	win.AudioObject.stateChanged = function(id, wall, state, message) {
-		var r = oldHandler.call(this, id, wall, state, message);
-		if (wall) id = 'Wall'+id;
+	
+	var showPlayerHandler = function(id) {
+		var r = arguments.callee.janeth_original ?
+			arguments.callee.janeth_original.apply(this, arguments) : undefined;
 		
-		if (!S.fm.active()) return;
+		if (S.fm.active()) {
+			setTimeout(function(){scrobbler.start(id);}, 0);
+		}
 		
-		switch (state) {
-		case 'init':
-			setTimeout(function(){scrobbler.start(id);}, 0); // bad boys just broke GM security system
-			break;
-		case 'playing':
-			setTimeout(function(){scrobbler.play(id);}, 0);
-			break;
-		case 'paused':
-			setTimeout(function(){scrobbler.pause(id);},0);
-			break;
-		case 'finished':
-		case 'stopped':
-			setTimeout(function(){scrobbler.stop();},0);
-			break;
-		};
-		 
+		return r;
+	};
+	
+	var hidePlayerHandler = function(id) {
+		var r = arguments.callee.janeth_original ?
+			arguments.callee.janeth_original.apply(this, arguments) : undefined;
+		
+		if (S.fm.active())
+		{
+			setTimeout(function(){scrobbler.stop();}, 0);
+		}
+		
+		return r;
+	};
+	
+	var changeStateHandler = function(id, state, value) {
+		var r = arguments.callee.janeth_original ?
+			arguments.callee.janeth_original.apply(this, arguments) : undefined;
+			
+		if (S.fm.active()) {
+			switch (state) {
+			case 'play':
+				setTimeout(function(){scrobbler.play(id);}, 0);
+				break;
+			case 'pause':
+				setTimeout(function(){scrobbler.pause(id);}, 0);
+				break;
+			}
+		}
+		
 		return r;
 	}
 	
-	if (win.getPageContent) {
-		var oldPageHandler = win.getPageContent;
-		win.getPageContent = function(offset, inTop, afterFunc, obj) {
-			setTimeout(function(){scrobbler.stop();},0);
-			return oldPageHandler(offset, inTop, afterFunc, obj);
-		}
+	var updateResultsHandler = function() {
+		setTimeout(function(){scrobbler.stop();},0);
+		return arguments.callee.janeth_original ?
+			arguments.callee.janeth_original.apply(this, arguments) : undefined;
 	}
 	
+	
+	showPlayerHandler.janeth_original = win.AudioObject.showPlayer;
+	win.AudioObject.showPlayer = showPlayerHandler;
+	
+	hidePlayerHandler.janeth_original = win.AudioObject.hidePlayer;
+	win.AudioObject.hidePlayer = hidePlayerHandler;
+	
+	changeStateHandler.janeth_original = win.AudioObject.changeState;
+	win.AudioObject.changeState = changeStateHandler;
+	
+	
 	if (win.updateResults) {
-		var oldUpdateResults = win.updateResults;
-		win.updateResults = function() {
-			setTimeout(function(){scrobbler.stop();},0);
-			return oldUpdateResults.apply(null, arguments);
-		}
+		updateResultsHandler.janeth_original = win.updateResults;
+		win.updateResults = updateResultsHandler;
+		
 	}
 	
 	setTimeout(function() {
@@ -727,15 +743,10 @@ var hookVkontakte = function() {
 				scrobbler.stop();
 			} }
 		);
-	},0);
+	}, 0);
 }
 
-if ((location.hostname == 'vkontakte.ru' || location.hostname == 'vk.com') && 
-	(location.pathname.indexOf('/audio') == 0 ||
-	location.pathname.indexOf('/gsearch.php') == 0 ||
-	location.pathname.indexOf('/id') == 0 ||
-	location.pathname.indexOf('/profile.php') == 0 ||
-	location.pathname.indexOf('/club') == 0)) {
+if (location.hostname == 'vkontakte.ru' || location.hostname == 'vk.com') {
 	// vkontakte part
 	// Hook up to vkontakte's audio object
 	hookVkontakte();
@@ -1255,7 +1266,7 @@ var opera_conn = {
 		req.addErrback(function(code) { if (errorHandler) errorHandler(code); });
 		req.addCallback(function(result){
 			log_('Conn: trackinfo callback');
-			successHandler(result);
+			successHandler(result[0]);
 		});
 	},
 };
@@ -1580,6 +1591,7 @@ Requester = {
 			log_("Requester: Deferred object disappeared.");
 			return;
 		}
+		
 		deferred = win.parent[req_id];
 		win.parent.setTimeout(function() { // run in parent window thread
 			deferred.callback(unserializeData(data));
