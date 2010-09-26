@@ -3,7 +3,7 @@
 // Compatible with Opera, Firefox. 
 // Tested with Opera 9.5, Opera 10, Firefox3 (GM 0.8)
 //
-// beta 6 (2010-09-27)
+// beta 7 (2010-09-27)
 //
 // More info at http://nichtverstehen.de/vkontakte-scrobbler
 //
@@ -33,7 +33,7 @@
 
 (function() { /*  begin private namespace */
 
-var JANETH_VERSION = "Janeth бета 6 (2010-09-27)\n\n"+
+var JANETH_VERSION = "Janeth бета 7 (2010-09-27)\n\n"+
 	"Юзер-скрипт для скробблинга прослушанных аудизаписей на vkontakte.ru.\n\n"+
 	"Документация есть на сайте http://nichtverstehen.de/vkontakte-scrobbler/\n"+
 	"Автор — Кирилл Николаев <cyril7@gmail.com>";
