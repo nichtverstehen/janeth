@@ -49,7 +49,7 @@ var S = { fm: null };
 
 var fixStyles = function () {
 	var styleId = 'scrobblerStyleFix';
-	var styleBody = '.audioTitle, .fmNoteAudioTitle { width: 300px !important; } \n#pagesTop .pageList { padding-left: 10px; }';
+	var styleBody = '.audioTitle { width: 300px !important; } \n#pagesTop .pageList { padding-left: 10px; }';
 	
 	var style = document.getElementById(styleId);
 	if (style) return;
@@ -304,11 +304,8 @@ PlayingIcon.prototype = {
 		
 		var d = document.getElementById('performer'+this.track_id);
 		if (!d) return;
-		var d1 = d.parentNode.parentNode;
-		d1.appendChild(this.playingDiv);
-		
-		if (location.pathname.indexOf('/note') == 0)
-			d.parentNode.className += ' fmNoteAudioTitle';
+		d = d.parentNode.parentNode;
+		d.appendChild(this.playingDiv);
 	},
 	toggleAdvanced: function() {
 		if (!('adv' in this) || this.adv == null) {
@@ -614,7 +611,7 @@ var scrobbler = {
 		
 		var btnE = document.getElementById('imgbutton'+rid);
 		if (!btnE) return; // TODO: throw
-		var t = /,\s?(\d+)\);$/.exec(btnE.getAttribute('onclick'));
+		var t = /,(\d+)\);$/.exec(btnE.getAttribute('onclick'));
 		
 		this.cid = rid;
 		var len = Number(t[1]);
@@ -676,7 +673,6 @@ var hookVkontakte = function() {
 	if (typeof win.AudioObject == 'undefined') return; // not vkontakte.ru?
 	
 	var showPlayerHandler = function(id) {
-		log_("SHOW");
 		var r = arguments.callee.janeth_original ?
 			arguments.callee.janeth_original.apply(this, arguments) : undefined;
 		
