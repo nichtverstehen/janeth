@@ -3,7 +3,7 @@
 // Compatible with Opera, Firefox. 
 // Tested with Opera 9.5, Opera 10, Firefox3 (GM 0.8)
 //
-// beta 7 (2010-09-27)
+// beta 8 (2010-XX-XX)
 //
 // More info at http://nichtverstehen.de/vkontakte-scrobbler
 //
@@ -13,7 +13,7 @@
 // ==UserScript==
 // @name          Janeth vkontakte-scrobbler
 // @namespace     http://nichtverstehen.de/vkontakte-scrobbler
-// @version       0.7
+// @version       0.8
 // @description   scrobble vkontakte audiotrack plays
 //
 // @copyright 2010, Cyril Nikolaev (http://nichtverstehen.de)
@@ -33,7 +33,7 @@
 
 (function() { /*  begin private namespace */
 
-var JANETH_VERSION = "Janeth бета 7 (2010-09-27)\n\n"+
+var JANETH_VERSION = "Janeth бета 8 (2010-XX-XX)\n\n"+
 	"Юзер-скрипт для скробблинга прослушанных аудизаписей на vkontakte.ru.\n\n"+
 	"Документация есть на сайте http://nichtverstehen.de/vkontakte-scrobbler/\n"+
 	"Автор — Кирилл Николаев <cyril7@gmail.com>";
@@ -49,7 +49,7 @@ var S = { fm: null };
 
 var fixStyles = function () {
 	var styleId = 'scrobblerStyleFix';
-	var styleBody = '.audioTitle { width: 300px !important; } \n#pagesTop .pageList { padding-left: 10px; }';
+	var styleBody = '.audioTitle, .fmNoteAudioTitle { width: 300px !important; } \n#pagesTop .pageList { padding-left: 10px; }';
 	
 	var style = document.getElementById(styleId);
 	if (style) return;
@@ -304,8 +304,11 @@ PlayingIcon.prototype = {
 		
 		var d = document.getElementById('performer'+this.track_id);
 		if (!d) return;
-		d = d.parentNode.parentNode;
-		d.appendChild(this.playingDiv);
+		var d1 = d.parentNode.parentNode;
+		d1.appendChild(this.playingDiv);
+		
+		if (location.pathname.indexOf('/note') == 0)
+			d.parentNode.className += ' fmNoteAudioTitle';
 	},
 	toggleAdvanced: function() {
 		if (!('adv' in this) || this.adv == null) {
@@ -611,7 +614,7 @@ var scrobbler = {
 		
 		var btnE = document.getElementById('imgbutton'+rid);
 		if (!btnE) return; // TODO: throw
-		var t = /,(\d+)\);$/.exec(btnE.getAttribute('onclick'));
+		var t = /,\s?(\d+)\);$/.exec(btnE.getAttribute('onclick'));
 		
 		this.cid = rid;
 		var len = Number(t[1]);
