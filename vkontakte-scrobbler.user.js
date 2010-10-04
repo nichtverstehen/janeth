@@ -3,7 +3,7 @@
 // Compatible with Opera, Firefox. 
 // Tested with Opera 9.5, Opera 10, Firefox3 (GM 0.8)
 //
-// beta 8 (2010-XX-XX)
+// beta 8 (2010-10-05)
 //
 // More info at http://nichtverstehen.de/vkontakte-scrobbler
 //
@@ -33,7 +33,7 @@
 
 (function() { /*  begin private namespace */
 
-var JANETH_VERSION = "Janeth бета 8 (2010-XX-XX)\n\n"+
+var JANETH_VERSION = "Janeth бета 8 (2010-10-05)\n\n"+
 	"Юзер-скрипт для скробблинга прослушанных аудизаписей на vkontakte.ru.\n\n"+
 	"Документация есть на сайте http://nichtverstehen.de/vkontakte-scrobbler/\n"+
 	"Автор — Кирилл Николаев <cyril7@gmail.com>";
@@ -736,7 +736,6 @@ var hookVkontakte = function() {
 	if (win.updateResults) {
 		updateResultsHandler.janeth_original = win.updateResults;
 		win.updateResults = updateResultsHandler;
-		
 	}
 	
 	setTimeout(function() {
@@ -753,6 +752,25 @@ if (location.hostname == 'vkontakte.ru' || location.hostname == 'vk.com') {
 	// vkontakte part
 	// Hook up to vkontakte's audio object
 	hookVkontakte();
+	
+	var loadPlayerHandler = function() {
+		var r = arguments.callee.janeth_original ?
+			arguments.callee.janeth_original.apply(this, arguments) : undefined;
+		
+		var playerLoadHandler = function() {
+			hookVkontakte();
+			return arguments.callee.janeth_original ?
+				arguments.callee.janeth_original.apply(this, arguments) : undefined;
+		}
+		playerLoadHandler.janeth_original = window.player_onload;
+		if (!window.PLAYER_JS_ADDED) {
+			window.player_onload = playerLoadHandler;
+		}
+		
+		return r;
+	}
+	loadPlayerHandler.janeth_original = window.loadPlayer;
+	window.loadPlayer  = loadPlayerHandler;
 }
 
 S.fm = {
